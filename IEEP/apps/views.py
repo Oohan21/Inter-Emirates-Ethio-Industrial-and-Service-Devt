@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
-from django.views.generic import ListView,
+from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, F, Sum, Count
 from django.db import transaction
@@ -92,5 +92,6 @@ class StockItemListView(LoginRequiredMixin, ListView):
             'current_filters': self.request.GET.urlencode(),
         })
         return context
+
 
 
