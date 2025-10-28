@@ -40,6 +40,50 @@ class StockItemListView(LoginRequiredMixin, ListView):
         self.out_of_stock_count = queryset.filter(quantity__lte=0).count()
         self.reorder_alert_count = ReorderAlert.objects.filter(status='active').count()
       
+       # Apply filters
+        warehouse = self.request.GET.get('warehouse')
+        if warehouse:
+            queryset = queryset.filter(warehouse_id=warehouse)
+        
+        product_type = self.request.GET.get('product_type')
+        if product_type:
+            queryset = queryset.filter(product__product_type=product_type)
+        
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(product__category_id=category)
+        
+        stock_status = self.request.GET.get('stock_status')
+        if stock_status == 'low':
+            queryset = queryset.filter(quantity__lte=F('reorder_threshold'), quantity__gt=0)
+        elif stock_status == 'out':
+            queryset = queryset.filter(quantity__lte=0)
+        elif stock_status == 'normal':
+            queryset = queryset.filter(quantity__gt=F('reorder_threshold'))
+        
+        procurement_status = self.request.GET.get('procurement_status')
+        if procurement_status:
+            queryset = queryset.filter(procurement_status=procurement_status)
+        
+        expiry_status = self.request.GET.get('expiry_status')
+        if expiry_status == 'expired':
+            queryset = queryset.filter(expiry_date__lt=timezone.now().date())
+        elif expiry_status == 'near_expiry':
+            queryset = queryset.filter(
+                expiry_date__gte=timezone.now().date(),
+                expiry_date__lte=timezone.now().date() + timezone.timedelta(days=30)
+            )
+        
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(product__sku__icontains=search) |
+                Q(product__name__icontains=search) |
+                Q(batch_number__icontains=search) |
+                Q(location__icontains=search) |
+                Q(notes__icontains=search)
+            )
+        
         # Apply sorting
         sort = self.request.GET.get('sort', 'product__sku')
         if sort.startswith('-'):
@@ -92,5 +136,6 @@ class StockItemListView(LoginRequiredMixin, ListView):
             'current_filters': self.request.GET.urlencode(),
         })
         return context
+
 
 
