@@ -1,0 +1,126 @@
+<!-- templates/users/role_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Role Management - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Role Management</h1>
+        <p class="text-gray-600">Manage user roles and permissions</p>
+    </div>
+    <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        Create New Role
+    </button>
+</div>
+
+<!-- Roles Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for role in roles %}
+    <div class="bg-white rounded-lg shadow border hover:shadow-md transition duration-200">
+        <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">{{ role.get_name_display }}</h3>
+                <span class="px-2 py-1 text-xs rounded-full 
+                            {% if role.name == 'admin' %}bg-purple-100 text-purple-800
+                            {% elif role.name == 'production_manager' %}bg-blue-100 text-blue-800
+                            {% elif role.name == 'maintenance_engineer' %}bg-yellow-100 text-yellow-800
+                            {% elif role.name == 'inventory_clerk' %}bg-green-100 text-green-800
+                            {% elif role.name == 'procurement' %}bg-orange-100 text-orange-800
+                            {% elif role.name == 'finance' %}bg-indigo-100 text-indigo-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ role.users.count }} users
+                </span>
+            </div>
+            
+            <p class="text-sm text-gray-600 mb-4">{{ role.description|default:"System role" }}</p>
+            
+            <!-- Permissions Summary -->
+            <div class="mb-4">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Key Permissions:</h4>
+                <div class="flex flex-wrap gap-1">
+                    {% if role.permissions.all %}
+                        {% for perm in role.permissions.all|slice:":3" %}
+                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                            {{ perm.name|truncatechars:20 }}
+                        </span>
+                        {% endfor %}
+                        {% if role.permissions.count > 3 %}
+                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                            +{{ role.permissions.count|add:"-3" }} more
+                        </span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-xs text-gray-500">No specific permissions</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Module Access -->
+            <div class="mb-4">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Module Access:</h4>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        <span>Production</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        <span>Inventory</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        <span>Maintenance</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        <span>Quality</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                <span class="text-sm text-gray-500">
+                    Created: {{ role.created_at|date:"M d, Y" }}
+                </span>
+                <div class="flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                    {% if role.name != 'admin' %}
+                    <button class="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-3 text-center py-12">
+        <div class="text-gray-400 text-6xl mb-4">👥</div>
+        <h3 class="text-lg font-semibold text-gray-600">No roles found</h3>
+        <p class="text-gray-500">Get started by creating your first role</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Predefined Roles Info -->
+<div class="mt-8 bg-blue-50 rounded-lg p-6">
+    <h3 class="text-lg font-semibold text-blue-800 mb-3">About System Roles</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div>
+            <h4 class="font-semibold text-blue-700">Administrator</h4>
+            <p class="text-blue-600">Full system access and user management</p>
+        </div>
+        <div>
+            <h4 class="font-semibold text-blue-700">Production Manager</h4>
+            <p class="text-blue-600">Production planning and monitoring</p>
+        </div>
+        <div>
+            <h4 class="font-semibold text-blue-700">Maintenance Engineer</h4>
+            <p class="text-blue-600">Equipment maintenance management</p>
+        </div>
+        <div>
+            <h4 class="font-semibold text-blue-700">Inventory Clerk</h4>
+            <p class="text-blue-600">Stock management and transactions</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
