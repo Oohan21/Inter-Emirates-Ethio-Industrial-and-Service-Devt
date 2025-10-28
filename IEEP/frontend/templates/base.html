@@ -1,0 +1,439 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Inter Emirates Ethio Paint ERP{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="bg-gray-100">
+    <div
+      x-data="{ sidebarOpen: false, userMenuOpen: false }"
+      class="flex h-screen"
+    >
+      <!-- Sidebar -->
+      <div
+        class="bg-blue-800 text-white w-64 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-200 ease-in-out z-30"
+        :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }"
+      >
+        <div class="p-4 border-b border-blue-700">
+          <h1 class="text-xl font-bold">Inter Emirates ERP</h1>
+          <p class="text-blue-200 text-sm">Paint Industry</p>
+        </div>
+        <nav class="mt-4">
+          <!-- FIXED: Changed 'home' to 'dashboard' -->
+          <a
+            href="{% url 'dashboard' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if request.path == '/' %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            Dashboard
+          </a>
+          <a
+            href="{% url 'product-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'products' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              ></path>
+            </svg>
+            Products
+          </a>
+          <a
+            href="{% url 'stock-item-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'inventory' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              ></path>
+            </svg>
+            Inventory
+          </a>
+          <a
+    href="{% url 'user-list' %}"
+    class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'users' in request.path %}bg-blue-700{% endif %}"
+  >
+    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 4.354a4 4 0 110 5.292M15 21h-6a4 4 0 01-4-4v-1a4 4 0 014-4h6a4 4 0 014 4v1a4 4 0 01-4 4z"></path>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"></path>
+    </svg>
+    Users
+  </a>
+          <a href="{% url 'notification-list' %}" 
+          class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'inventory' in request.path %}bg-blue-700{% endif %}">
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              ></path>
+            </svg>
+            <span
+              id="unread-badge"
+              class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden"
+            ></span>
+            Notification
+          </a>
+          <a
+            href="{% url 'work-order-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'production' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              ></path>
+            </svg>
+            Production
+          </a>
+          <a
+            href="{% url 'maintenance-order-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'maintenance' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
+            </svg>
+            Maintenance
+          </a>
+          <a
+            href="{% url 'purchase-order-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'procurement' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+            Procurement
+          </a>
+          <a
+            href="{% url 'qc-record-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'quality' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            Quality Control
+          </a>
+          <a
+            href="{% url 'transaction-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'finance' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+              ></path>
+            </svg>
+            Finance
+          </a>
+          <a
+            href="{% url 'stock-ledger' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'reports' in request.path %}bg-blue-700{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              ></path>
+            </svg>
+            Reports
+          </a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col md:ml-64">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+          <div class="flex items-center justify-between p-4">
+            <button
+              @click="sidebarOpen = !sidebarOpen"
+              class="md:hidden p-2 rounded-md hover:bg-gray-100"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                ></path>
+              </svg>
+            </button>
+
+            <!-- ---------- Header (replace the old <div class="flex items-center space-x-4"> block) ---------- -->
+<div class="flex items-center space-x-4">
+  <!-- User menu (dropdown) -->
+  <div x-data="{ open: false }" class="relative">
+    <button
+      @click="open = !open"
+      class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
+    >
+      <!-- Avatar (optional – falls back to initials) -->
+      <div
+        id="user-avatar"
+        class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium"
+      >
+        <!-- Filled by JS -->
+      </div>
+
+      <span id="user-info" class="text-sm font-medium">Loading…</span>
+
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </button>
+
+    <!-- Dropdown -->
+    <div
+      x-show="open"
+      @click.away="open = false"
+      x-transition
+      class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+    >
+      <a
+        href="{% url 'profile' %}"
+        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        >My Profile</a
+      >
+      <hr class="border-gray-200" />
+      <button
+        id="logout-btn"
+        class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+        >Logout</button
+      >
+    </div>
+  </div>
+</div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="flex-1 overflow-y-auto p-6">
+          {% if messages %}
+          <div class="mb-6">
+            {% for message in messages %}
+            <div
+              class="p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}"
+            >
+              {{ message|safe }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %} {% block content %} {% endblock %}
+        </main>
+      </div>
+
+      <!-- Overlay for mobile sidebar -->
+      <div
+        x-show="sidebarOpen"
+        @click="sidebarOpen = false"
+        class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+      ></div>
+    </div>
+
+    <script>
+      // Authentication and notification handling
+      document.addEventListener("DOMContentLoaded", function () {
+        // Check authentication
+        fetch("/api/auth/profile/")
+          .then((response) => {
+            if (!response.ok) {
+              window.location.href = "/login/";
+            }
+            return response.json();
+          })
+          .then((data) => {
+            document.getElementById("user-info").textContent = `Welcome, ${
+              data.first_name || data.username
+            }`;
+          })
+          .catch((error) => {
+            console.error("Auth check failed:", error);
+            window.location.href = "/login/";
+          });
+
+        // Logout handler
+        document
+          .getElementById("logout-btn")
+          .addEventListener("click", function () {
+            fetch("/api/auth/logout/", {
+              method: "POST",
+              headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+              },
+            }).then(() => {
+              window.location.href = "/login/";
+            });
+          });
+
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === name + "=") {
+                cookieValue = decodeURIComponent(
+                  cookie.substring(name.length + 1)
+                );
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
+        const ws = new WebSocket(
+          `ws://${window.location.host}/ws/notifications/`
+        );
+
+        ws.onmessage = function (e) {
+          const payload = JSON.parse(e.data);
+          if (payload.type === "low_stock") {
+            const d = payload.data;
+            Toastify({
+              text: `<strong>${d.title}</strong><br>${d.message}<br><a href="${d.url}" class="text-white underline">View</a>`,
+              duration: 10000,
+              gravity: "top",
+              position: "right",
+              backgroundColor: "#ef4444",
+              escapeMarkup: false,
+            }).showToast();
+          }
+        };
+
+        // ---------- Unread-count badge ----------
+        function updateBadge() {
+          fetch('{% url "unread-count" %}')
+            .then((r) => r.json())
+            .then((data) => {
+              const badge = document.getElementById("unread-badge");
+              if (data.count > 0) {
+                badge.textContent = data.count > 99 ? "99+" : data.count;
+                badge.classList.remove("hidden");
+              } else {
+                badge.classList.add("hidden");
+              }
+            });
+        }
+        setInterval(updateBadge, 30000);
+        updateBadge();
+      });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

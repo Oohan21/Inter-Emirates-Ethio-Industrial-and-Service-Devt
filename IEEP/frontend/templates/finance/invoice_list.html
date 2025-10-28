@@ -1,0 +1,80 @@
+<!-- templates/finance/invoice_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Invoices - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-draft { background-color: #e5e7eb; color: #4b5563; }
+        .status-sent { background-color: #dbeafe; color: #1e40af; }
+        .status-paid { background-color: #d1fae5; color: #047857; }
+        .status-overdue { background-color: #fee2e2; color: #b91c1c; }
+        .status-cancelled { background-color: #f3e8ff; color: #6d28d9; }
+        .table-row:hover { background-color: #f3f4f6; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">Invoices</h1>
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by invoice number or supplier">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select name="status" id="status"
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Statuses</option>
+                        {% for value, label in invoices.model.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Invoices Table -->
+            {% if invoices %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-3 text-gray-700 font-semibold">Invoice Number</th>
+                                <th class="p-3 text-gray-700 font-semibold">Supplier</th>
+                                <th class="p-3 text-gray-700 font-semibold">Invoice Date</th>
+                                <th class="p-3 text-gray-700 font-semibold">Due Date</th>
+                                <th class="p-3 text-gray-700 font-semibold">Total Amount</th>
+                                <th class="p-3 text-gray-700 font-semibold">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                                <tr class="border-b table-row status-{{ invoice.status }}">
+                                    <td class="p-3">{{ invoice.invoice_number }}</td>
+                                    <td class="p-3">{{ invoice.supplier }}</td>
+                                    <td class="p-3">{{ invoice.invoice_date|date:"Y-m-d" }}</td>
+                                    <td class="p-3">{{ invoice.due_date|date:"Y-m-d" }}</td>
+                                    <td class="p-3">{{ invoice.total_amount }}</td>
+                                    <td class="p-3">{{ invoice.get_status_display }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600">No invoices found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
