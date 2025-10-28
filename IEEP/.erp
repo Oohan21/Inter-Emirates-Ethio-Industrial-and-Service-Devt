@@ -1,0 +1,8 @@
+SECRET_KEY=change-me
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_DATABASE=inter_emirates_ethio_paint_industry
+MYSQL_USER=root
+MYSQL_PASSWORD=
