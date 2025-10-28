@@ -1,216 +1,236 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.conf import settings
-import secrets
+# users/views.py
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views import View
+from django.http import JsonResponse
+from .models import User, Role, AuditLog
+from .forms import UserForm
+from django.contrib.auth.views import PasswordResetView
+from django.contrib.messages.views import SuccessMessageMixin
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
 
-from .serializers import (
-    UserSerializer, 
-    UserRegistrationSerializer,
-    PasswordResetSerializer,
-    UserRoleUpdateSerializer
-)
-
-User = get_user_model()
-
-class CustomUserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-    @action(detail=False, methods=['GET'], permission_classes=[permissions.IsAuthenticated])
-    def me(self, request):
-        """
-        Get current user's profile
-        """
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['PUT'], permission_classes=[permissions.IsAuthenticated])
-    def update_profile(self, request):
-        """
-        Update current user's profile
-        """
-        serializer = self.get_serializer(request.user, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-class UserRegistrationView(APIView):
-    permission_classes = [permissions.AllowAny]
-
+class LoginView(View):
     def post(self, request):
-        """
-        User registration endpoint
-        """
-        serializer = UserRegistrationSerializer(data=request.data)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
         
-        if serializer.is_valid():
-            user = serializer.save()
-            
-            # Generate tokens
-            refresh = RefreshToken.for_user(user)
-            
-            # Send welcome email
-            send_mail(
-                'Welcome to ERP System',
-                f'Hello {user.username}, Your account has been created successfully.',
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
+        if user is not None:
+            login(request, user)
+            # Log the login action
+            AuditLog.objects.create(
+                user=user,
+                action='login',
+                model_name='User',
+                object_id=str(user.id),
+                ip_address=self.get_client_ip(request)
             )
-            
-            return Response({
-                'user': UserSerializer(user).data,
-                'refresh': str(refresh),
-                'access': str(refresh.access_token)
-            }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class UserProfileView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        """
-        Get current user's detailed profile
-        """
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
-
-    def put(self, request):
-        """
-        Update user profile
-        """
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class PasswordResetRequestView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        """
-        Initiate password reset process
-        """
-        serializer = PasswordResetSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                return Response(
-                    {'error': 'No user found with this email'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            # Generate reset token
-            reset_token = secrets.token_urlsafe(32)
-            user.password_reset_token = reset_token
-            user.save()
-            
-            # Send reset email
-            reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
-            send_mail(
-                'Password Reset Request',
-                f'Click the link to reset your password: {reset_link}',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
-            
-            return Response({'message': 'Password reset link sent'})
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class PasswordResetConfirmView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        """
-        Confirm password reset
-        """
-        token = request.data.get('token')
-        new_password = request.data.get('new_password')
-        
-        if not token or not new_password:
-            return Response(
-                {'error': 'Token and new password are required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            user = User.objects.get(password_reset_token=token)
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'Invalid or expired reset token'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Set new password and clear reset token
-        user.set_password(new_password)
-        user.password_reset_token = None
-        user.save()
-        
-        return Response({'message': 'Password reset successful'})
-
-class UserRoleUpdateView(APIView):
-    permission_classes = [permissions.IsAdminUser]
-
-    def post(self, request):
-        """
-        Update user role (admin-only)
-        """
-        serializer = UserRoleUpdateSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            user_id = serializer.validated_data['user_id']
-            new_role = serializer.validated_data['role']
-            
-            try:
-                user = User.objects.get(id=user_id)
-                user.role = new_role
-                user.save()
-                
-                return Response({
-                    'message': 'User role updated successfully',
-                    'user': UserSerializer(user).data
-                })
-            except User.DoesNotExist:
-                return Response(
-                    {'error': 'User not found'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class UserStatusToggleView(APIView):
-    permission_classes = [permissions.IsAdminUser]
-
-    def post(self, request):
-        """
-        Toggle user account status (active/inactive)
-        """
-        user_id = request.data.get('user_id')
-        
-        try:
-            user = User.objects.get(id=user_id)
-            user.is_active = not user.is_active
-            user.save()
-            
-            return Response({
-                'message': f"User {'activated' if user.is_active else 'deactivated'} successfully",
-                'user': UserSerializer(user).data
+            return JsonResponse({
+                'success': True,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'role': user.role.name if user.role else None
+                }
             })
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'User not found'},
-                status=status.HTTP_404_NOT_FOUND
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'})
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+class LogoutView(View):
+    def post(self, request):
+        if request.user.is_authenticated:
+            # Log the logout action
+            AuditLog.objects.create(
+                user=request.user,
+                action='logout',
+                model_name='User',
+                object_id=str(request.user.id),
+                ip_address=self.get_client_ip(request)
             )
+            logout(request)
+        return JsonResponse({'success': True})
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+class AuthRootView(View):
+    def get(self, request):
+        return JsonResponse({
+            'message': 'Authentication API',
+            'endpoints': {
+                'login': '/api/auth/login/',
+                'logout': '/api/auth/logout/',
+                'profile': '/api/auth/profile/',
+                'users': '/api/auth/users/',
+                'roles': '/api/auth/roles/',
+                'audit_logs': '/api/auth/audit-logs/'
+            }
+        })
+
+@method_decorator(login_required, name='dispatch')
+class UserProfileView(View):
+    def get(self, request):
+        user = request.user
+        return JsonResponse({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'role': user.role.name if user.role else None,
+            'department': user.department,
+            'phone': user.phone
+        })
+
+@method_decorator(login_required, name='dispatch')
+class UserListView(ListView):
+    model = User
+    template_name = 'users/user_list.html'
+    context_object_name = 'users'
+
+@method_decorator(login_required, name='dispatch')
+class UserDetailView(DetailView):
+    model = User
+    template_name = 'users/user_detail.html'
+    context_object_name = 'user'
+
+@method_decorator(login_required, name='dispatch')
+class RoleListView(ListView):
+    model = Role
+    template_name = 'users/role_list.html'
+    context_object_name = 'roles'
+
+@method_decorator(login_required, name='dispatch')
+class AuditLogListView(ListView):
+    model = AuditLog
+    template_name = 'users/audit_log_list.html'
+    context_object_name = 'audit_logs'
+    paginate_by = 50
+    ordering = ['-timestamp']
+
+class UserCreateView(LoginRequiredMixin, CreateView):
+    model = User
+    form_class = UserForm
+    template_name = 'users/user_form.html'
+    success_url = reverse_lazy('user-list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        AuditLog.objects.create(
+            user=self.request.user,
+            action='create',
+            model_name='User',
+            object_id=str(self.object.id),
+            object_repr=str(self.object),
+            ip_address=self.get_client_ip(self.request)
+        )
+        return response
+    
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+class UserUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = UserForm
+    template_name = 'users/user_form.html'
+    success_url = reverse_lazy('user-list')
+
+    def form_valid(self, form):
+        old_user = User.objects.get(pk=self.object.pk)
+        response = super().form_valid(form)
+        changes = {}
+        for field in form.changed_data:
+            changes[field] = {
+                'old': str(getattr(old_user, field)),
+                'new': str(getattr(self.object, field))
+            }
+        if changes:
+            AuditLog.objects.create(
+                user=self.request.user,
+                action='update',
+                model_name='User',
+                object_id=str(self.object.id),
+                object_repr=str(self.object),
+                changes=changes,
+                ip_address=self.get_client_ip(self.request)
+            )
+        return response
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['instance'] = self.get_object()
+        return kwargs
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+class UserToggleActiveView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        old_status = user.is_active
+        user.is_active = not user.is_active
+        user.save()
+
+        AuditLog.objects.create(
+            user=request.user,
+            action='update',
+            model_name='User',
+            object_id=str(user.id),
+            object_repr=str(user),
+            changes={'is_active': {'old': old_status, 'new': user.is_active}},
+            ip_address=self.get_client_ip(request) 
+        )
+        messages.success(request, f"User {'activated' if user.is_active else 'deactivated'}.")
+        return redirect('user-list')
+
+    # ADD THIS METHOD INSIDE THE CLASS
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+class UserResetPasswordView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        import secrets, string
+        new_pass = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+        user.set_password(new_pass)
+        user.save()
+        AuditLog.objects.create(
+            user=request.user,
+            action='update',
+            model_name='User',
+            object_id=str(user.id),
+            changes={'password': {'old': '***', 'new': '*** (reset)'}},
+            ip_address=self.get_client_ip(request)
+        )
+        messages.success(request, f"Password reset for {user.username}. New: <code class='bg-gray-100 px-2 py-1 rounded'>{new_pass}</code>")
+        return redirect('user-list')
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
