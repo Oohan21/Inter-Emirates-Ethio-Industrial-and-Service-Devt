@@ -16,7 +16,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.views.generic import TemplateView
+from django.contrib.auth.decorators import login_required
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', login_required(TemplateView.as_view(template_name='dashboard.html')), name='dashboard'),
+    path('login/', TemplateView.as_view(template_name='users/login.html'), name='login'),
+    path('api/auth/', include('apps.users.urls')),
+    path('api/products/', include('apps.products.urls')),
+    path('api/inventory/', include('apps.inventory.urls')),
+    path('api/production/', include('apps.production.urls')),
+    path('api/maintenance/', include('apps.maintenance.urls')),
+    path('api/procurement/', include('apps.procurement.urls')),
+    path('api/quality/', include('apps.quality.urls')),
+    path('api/finance/', include('apps.finance.urls')),
+    path('api/reports/', include('apps.reports.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
 ]
