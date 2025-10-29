@@ -1,42 +1,26 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView
-)
-from .views import (
-    CustomUserViewSet, 
-    UserRegistrationView,
-    UserProfileView,
-    PasswordResetRequestView,
-    PasswordResetConfirmView,
-    UserRoleUpdateView,
-    UserStatusToggleView
-)
-
-# Create a router for user-related viewsets
-router = DefaultRouter()
-router.register(r'', CustomUserViewSet, basename='users')
+# users/urls.py
+from django.urls import path
+from . import views
 
 urlpatterns = [
-    # Authentication Endpoints
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-
-    # User Registration and Management
-    path('register/', UserRegistrationView.as_view(), name='user_registration'),
-    path('profile/', UserProfileView.as_view(), name='user_profile'),
-    
-    # Password Management
-    path('password/reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),
-    path('password/reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    
-    # Role and Status Management
-    path('role/update/', UserRoleUpdateView.as_view(), name='user_role_update'),
-    path('status/toggle/', UserStatusToggleView.as_view(), name='user_status_toggle'),
-    
-    # Include ViewSet routes
-    path('', include(router.urls))
+    path("", views.AuthRootView.as_view(), name="auth-root"),
+    path("login/", views.LoginView.as_view(), name="login"),
+    path("logout/", views.LogoutView.as_view(), name="logout"),
+    path("profile/", views.UserProfileView.as_view(), name="profile"),
+    path("users/", views.UserListView.as_view(), name="user-list"),
+    path("users/<int:pk>/", views.UserDetailView.as_view(), name="user-detail"),
+    path("users/add/", views.UserCreateView.as_view(), name="user-add"),
+    path("users/<int:pk>/edit/", views.UserUpdateView.as_view(), name="user-edit"),
+    path(
+        "users/<int:pk>/toggle/",
+        views.UserToggleActiveView.as_view(),
+        name="user-toggle",
+    ),
+    path(
+        "users/<int:pk>/reset-password/",
+        views.UserResetPasswordView.as_view(),
+        name="user-reset-password",
+    ),
+    path("roles/", views.RoleListView.as_view(), name="role-list"),
+    path("audit-logs/", views.AuditLogListView.as_view(), name="audit-log-list"),
 ]
