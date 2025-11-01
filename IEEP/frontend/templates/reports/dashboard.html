@@ -1,0 +1,51 @@
+<!-- templates/reports/dashboard.html -->
+{% extends 'base.html' %} {% block title %}System Dashboard - Inter Emirates
+ERP{% endblock %} {% block extra_css %}
+<style>
+  .stat-card {
+    transition: transform 0.2s;
+  }
+  .stat-card:hover {
+    transform: scale(1.05);
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">System Dashboard</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div
+      class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600"
+    >
+      <h3 class="text-3xl font-semibold text-blue-800">{{ total_products }}</h3>
+      <p class="text-gray-600">Total Products</p>
+    </div>
+    <div
+      class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-red-600"
+    >
+      <h3 class="text-3xl font-semibold text-red-800">
+        <a href="{% url 'low-stock-report' %}" class="hover:underline"
+          >{{ low_stock_items }}</a
+        >
+      </h3>
+      <p class="text-gray-600">Low Stock Items</p>
+    </div>
+    <div
+      class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-green-600"
+    >
+      <h3 class="text-3xl font-semibold text-green-600">
+        {{ active_work_orders }}
+      </h3>
+      <p class="text-gray-600">Active Work Orders</p>
+    </div>
+    <div
+      class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-red-600"
+    >
+      <h3 class="text-3xl font-semibold text-red-600">
+        {{ pending_maintenance }}
+      </h3>
+      <p class="text-gray-600">Pending Maintenance</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
