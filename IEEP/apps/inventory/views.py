@@ -36,11 +36,14 @@ class StockItemListView(LoginRequiredMixin, ListView):
         # Fetch summary statistics
         self.total_items = queryset.count()
         self.total_value = sum(float(item.total_value) for item in queryset)
-        self.low_stock_count = queryset.filter(quantity__lte=F('reorder_threshold')).count()
+        self.low_stock_count = queryset.filter(
+        quantity__gt=0,
+        quantity__lte=F('reorder_threshold')
+        ).count()
         self.out_of_stock_count = queryset.filter(quantity__lte=0).count()
         self.reorder_alert_count = ReorderAlert.objects.filter(status='active').count()
-      
-       # Apply filters
+
+        # Apply filters
         warehouse = self.request.GET.get('warehouse')
         if warehouse:
             queryset = queryset.filter(warehouse_id=warehouse)
@@ -123,6 +126,16 @@ class StockItemListView(LoginRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        stock_items = self.get_queryset()
+        stock_status = stock_items.aggregate(
+            in_stock=Count('id',
+                filter=~Q(quantity__lte=F('reorder_threshold')) & ~Q(quantity__lte=0)),
+            low_stock=Count('id',
+                filter=Q(quantity__lte=F('reorder_threshold')) & ~Q(quantity__lte=0)),
+            out_of_stock=Count('id',
+                filter=Q(quantity__lte=0))
+        )
+        context['stock_status'] = stock_status
         context.update({
             'warehouses': Warehouse.objects.filter(is_active=True),
             'categories': Category.objects.all(),
@@ -141,21 +154,42 @@ class LowStockListView(LoginRequiredMixin, ListView):
     model = StockItem
     template_name = 'inventory/low_stock_list.html'
     context_object_name = 'low_stock_items'
-    
+    ordering = ['product__sku']
+
     def get_queryset(self):
-        return StockItem.objects.filter(
-            quantity__lte=F('reorder_threshold')
-        ).select_related('product', 'warehouse').order_by('product__sku')
-    
+        """
+        Returns only items that are LOW STOCK (0 < qty <= reorder_threshold).
+        Uses product.reorder_threshold as fallback if StockItem threshold is 0.
+        """
+        return (
+            StockItem.objects
+            .select_related('product__unit_of_measure', 'warehouse')
+            .annotate(
+                effective_threshold=Coalesce(
+                    F('reorder_threshold'),
+                    F('product__reorder_threshold'),
+                    Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))
+                ),
+                stock_deficit=F('effective_threshold') - F('quantity')
+            )
+            .filter(
+                quantity__gt=0,                           
+                quantity__lte=F('effective_threshold') 
+            )
+            .order_by('stock_deficit') 
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Add summary statistics
-        low_stock_items = self.get_queryset()
-        context['total_low_stock'] = low_stock_items.count()
-        context['total_value_at_risk'] = sum(
-            float(item.total_value) for item in low_stock_items
+        items = context['low_stock_items']
+
+        # Summary stats
+        context['total_low_stock'] = items.count()
+        context['total_deficit'] = sum(
+            float(item.stock_deficit) for item in items
         )
+        context['total_value_at_risk'] = sum(
+            float(item.total_value) for item in items
+        )
+
         return context
-
-
