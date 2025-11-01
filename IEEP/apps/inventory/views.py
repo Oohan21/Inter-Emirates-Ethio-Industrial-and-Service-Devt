@@ -137,5 +137,25 @@ class StockItemListView(LoginRequiredMixin, ListView):
         })
         return context
 
+class LowStockListView(LoginRequiredMixin, ListView):
+    model = StockItem
+    template_name = 'inventory/low_stock_list.html'
+    context_object_name = 'low_stock_items'
+    
+    def get_queryset(self):
+        return StockItem.objects.filter(
+            quantity__lte=F('reorder_threshold')
+        ).select_related('product', 'warehouse').order_by('product__sku')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Add summary statistics
+        low_stock_items = self.get_queryset()
+        context['total_low_stock'] = low_stock_items.count()
+        context['total_value_at_risk'] = sum(
+            float(item.total_value) for item in low_stock_items
+        )
+        return context
 
 
