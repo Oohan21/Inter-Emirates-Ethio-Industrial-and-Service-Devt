@@ -1,4 +1,3 @@
-# inventory/models.py
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -9,7 +8,7 @@ class Warehouse(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     location = models.CharField(max_length=200)
-    capacity = models.CharField(max_length=100, blank=True, null=True)  # e.g., "1000 sq ft"
+    capacity = models.CharField(max_length=100, blank=True, null=True) 
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -55,8 +54,11 @@ class StockItem(models.Model):
         ('received', 'Received'),
         ('pending', 'Pending'),
     ], default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)  # Added
-    updated_at = models.DateTimeField(auto_now=True)      # Added
+    created_at = models.DateTimeField(auto_now_add=True)  
+    updated_at = models.DateTimeField(auto_now=True)      
+    last_low_stock_alert = models.DateTimeField(null=True, blank=True)
+    alert_cooldown_days = models.PositiveSmallIntegerField(default=1)
+    ALERT_COOLDOWN_HOURS = 24
     
     @property
     def total_value(self):
@@ -65,6 +67,42 @@ class StockItem(models.Model):
     @property
     def is_low_stock(self):
         return self.quantity <= self.reorder_threshold and self.quantity > 0
+
+    @property
+    def should_send_alert(self):
+        """Check if we should send a low stock alert"""
+        if not self.is_low_stock:
+            return False
+        
+        if self.last_alert_sent:
+            time_since_last_alert = timezone.now() - self.last_alert_sent
+            if time_since_last_alert < timedelta(hours=self.ALERT_COOLDOWN_HOURS):
+                return False
+        
+        return True
+    
+    def mark_alert_sent(self):
+        """Mark that an alert has been sent"""
+        self.last_alert_sent = timezone.now()
+        self.save(update_fields=['last_alert_sent'])
+    
+    @property
+    def alert_recipients(self):
+        """Get users who should receive alerts for this stock item"""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        recipients = set()
+        
+        if self.warehouse.manager:
+            recipients.add(self.warehouse.manager)
+        
+        inventory_users = User.objects.filter(
+            groups__name__in=['Inventory Manager', 'Procurement Manager']
+        )
+        recipients.update(inventory_users)
+        
+        return list(recipients)
     
     @property
     def is_expired(self):
@@ -81,7 +119,7 @@ class StockItem(models.Model):
             models.Index(fields=['quantity', 'reorder_threshold']),
             models.Index(fields=['procurement_status']),
             models.Index(fields=['expiry_date']),
-            models.Index(fields=['created_at', 'updated_at']),  # Added for timestamp queries
+            models.Index(fields=['created_at', 'updated_at']),
         ]
     
     def __str__(self):
@@ -90,13 +128,28 @@ class StockItem(models.Model):
     def __str__(self):
         return f"{self.product.sku} at {self.warehouse.code} (Batch: {self.batch_number or '-'})"
 
+    def save(self, *args, **kwargs):
+        if not self.pk and self.reorder_threshold == 0:
+            if self.product.reorder_threshold > 0:
+                self.reorder_threshold = self.product.reorder_threshold
+
+        super().save(*args, **kwargs)
+
     @property
     def total_value(self):
         return self.quantity * self.unit_cost
 
     @property
+    def effective_reorder_threshold(self):
+        """Return StockItem threshold if set, otherwise product default."""
+        return self.reorder_threshold or self.product.reorder_threshold or Decimal('0')
+
+    @property
     def is_low_stock(self):
-        return self.quantity <= self.reorder_threshold
+        return (
+            self.quantity <= self.effective_reorder_threshold
+            and self.quantity > 0
+    )
 
     @property
     def is_expired(self):
@@ -133,7 +186,7 @@ class StockTransaction(models.Model):
     stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE, related_name='transactions')
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    reference = models.CharField(max_length=100, blank=True, null=True)  # PO number, WO number, etc.
+    reference = models.CharField(max_length=100, blank=True, null=True) 
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -146,7 +199,6 @@ class StockTransaction(models.Model):
         return f"{self.stock_item.product.sku} - {self.get_transaction_type_display()}"
     
     def save(self, *args, **kwargs):
-        # Update stock item quantity based on transaction type
         if self.transaction_type == 'in':
             self.stock_item.quantity += self.quantity
         elif self.transaction_type == 'out':
@@ -216,7 +268,6 @@ class Order(models.Model):
             if not stock_item:
                 raise ValueError(f"Insufficient stock for {item.product.sku} in warehouse {self.warehouse.code}")
             
-            # Create stock transaction
             StockTransaction.objects.create(
                 stock_item=stock_item,
                 transaction_type='out',
