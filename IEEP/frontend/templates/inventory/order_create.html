@@ -1,0 +1,191 @@
+<!-- inventory/templates/inventory/order_create.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create Order{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Create New Order</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <form id="orderForm" method="post">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="order_number" class="block text-sm font-medium text-gray-700 mb-2">
+                            Order Number *
+                        </label>
+                        <input type="text" id="order_number" name="order_number" required
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                               placeholder="e.g., ORD-2024-001">
+                    </div>
+                    
+                    <div>
+                        <label for="warehouse" class="block text-sm font-medium text-gray-700 mb-2">
+                            Warehouse *
+                        </label>
+                        <select id="warehouse" name="warehouse" required
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Select Warehouse</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}">{{ warehouse.name }} ({{ warehouse.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Order Items Section -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-800">Order Items</h3>
+                        <button type="button" id="addItemBtn" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm">
+                            Add Item
+                        </button>
+                    </div>
+                    
+                    <div id="orderItems" class="space-y-4">
+                        <!-- Items will be added here dynamically -->
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <a href="{% url 'order-list' %}" 
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded">
+                        Create Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for dynamic form handling -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderItems = document.getElementById('orderItems');
+    const addItemBtn = document.getElementById('addItemBtn');
+    let itemCount = 0;
+
+    // Add initial item
+    addOrderItem();
+
+    addItemBtn.addEventListener('click', addOrderItem);
+
+    function addOrderItem() {
+        itemCount++;
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'order-item bg-gray-50 p-4 rounded-lg border';
+        itemDiv.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                    <select name="product_id" required
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 product-select">
+                        <option value="">Select Product</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}" data-unit="{{ product.unit_of_measure.symbol }}">
+                            {{ product.sku }} - {{ product.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                    <input type="number" name="quantity" required min="0.01" step="0.01"
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 quantity-input"
+                           placeholder="0.00">
+                </div>
+                <div class="flex items-end">
+                    <button type="button" class="remove-item bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm">
+                        Remove
+                    </button>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-gray-500 unit-display"></div>
+        `;
+
+        orderItems.appendChild(itemDiv);
+
+        // Add event listeners for the new item
+        const productSelect = itemDiv.querySelector('.product-select');
+        const quantityInput = itemDiv.querySelector('.quantity-input');
+        const unitDisplay = itemDiv.querySelector('.unit-display');
+        const removeBtn = itemDiv.querySelector('.remove-item');
+
+        productSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const unit = selectedOption.getAttribute('data-unit');
+            unitDisplay.textContent = unit ? `Unit: ${unit}` : '';
+        });
+
+        removeBtn.addEventListener('click', function() {
+            if (document.querySelectorAll('.order-item').length > 1) {
+                itemDiv.remove();
+            } else {
+                alert('At least one order item is required.');
+            }
+        });
+    }
+
+    // Form submission
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const orderData = {
+            order_number: formData.get('order_number'),
+            warehouse: formData.get('warehouse'),
+            order_items: []
+        };
+
+        // Collect order items
+        document.querySelectorAll('.order-item').forEach(item => {
+            const productId = item.querySelector('[name="product_id"]').value;
+            const quantity = item.querySelector('[name="quantity"]').value;
+            
+            if (productId && quantity) {
+                orderData.order_items.push({
+                    product_id: parseInt(productId),
+                    quantity: parseFloat(quantity)
+                });
+            }
+        });
+
+        if (orderData.order_items.length === 0) {
+            alert('Please add at least one order item.');
+            return;
+        }
+
+        // Submit via AJAX
+        fetch('{% url "order-create" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = '{% url "order-list" %}';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while creating the order.');
+        });
+    });
+});
+</script>
+{% endblock %}
