@@ -117,7 +117,17 @@ class BOM(models.Model):
     def total_cost(self):
         return self.total_material_cost + self.labor_cost + self.overhead_cost
 
-        
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='products/images/', blank=True, null=True)
+    is_main = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-is_main'] 
+
+    def __str__(self):
+        return f"Image for {self.product.name} ({'Main' if self.is_main else 'Secondary'})"
+
 class BOMComponent(models.Model):
     bom = models.ForeignKey(BOM, on_delete=models.CASCADE, related_name='components')
     component = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='used_in_boms')
