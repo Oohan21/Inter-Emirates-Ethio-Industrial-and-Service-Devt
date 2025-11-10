@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container { width: 100% !important; }
+    .select2-container--default .select2-selection--single {
+        background-color: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        height: 38px;
+    }
+    .dark .select2-container--default .select2-selection--single {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #374151;
+        line-height: 36px;
+    }
+    .dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #f9fafb;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+    .tab-button.active {
+        @apply bg-blue-600 text-white border-blue-600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">My Profile</h1>
+    <p class="text-gray-600 dark:text-gray-400">Update your information or change your password</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden max-w-4xl border border-gray-200 dark:border-gray-700">
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 dark:border-gray-600">
+        <nav class="flex -mb-px">
+            <button type="button" class="tab-button px-6 py-3 text-sm font-medium border border-transparent rounded-tl-lg transition-colors active bg-blue-600 text-white border-blue-600" data-tab="info">
+                Personal Information
+            </button>
+            <button type="button" class="tab-button px-6 py-3 text-sm font-medium border border-transparent transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white" data-tab="password">
+                Change Password
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="p-6">
+        <!-- === PERSONAL INFO TAB === -->
+        <div id="tab-info" class="tab-content">
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="tab" value="info">
+
+                <!-- First / Last name -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.first_name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.last_name.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Username (read-only) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                    <p class="mt-1 p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100">{{ request.user.username }}</p>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}<p class="mt-1 text-xs text-red-600">{{ form.phone.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Department -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                    {{ form.department }}
+                    {% if form.department.errors %}<p class="mt-1 text-xs text-red-600">{{ form.department.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Role (read-only) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+                    <p class="mt-1 p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100">
+                        {{ request.user.role.get_name_display|default:"No Role" }}
+                    </p>
+                </div>
+
+                <!-- Profile Picture -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Picture</label>
+                    {{ form.profile_picture }}
+                    {% if form.profile_picture.errors %}<p class="mt-1 text-xs text-red-600">{{ form.profile_picture.errors.0 }}</p>{% endif %}
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Upload a new picture to update.</p>
+
+                    {% if form.instance.profile_picture %}
+                    <div class="mt-3">
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Current picture:</p>
+                        <img src="{{ request.user.profile_picture.url }}" class="w-24 h-24 rounded-full object-cover border border-gray-300 dark:border-gray-600" alt="Current">
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-end space-x-3 pt-4">
+                    <a href="{% url 'dashboard' %}" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                        Update Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- === CHANGE PASSWORD TAB === -->
+        <div id="tab-password" class="tab-content hidden">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="tab" value="password">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
+                    <input type="password" name="old_password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    {% if password_form.old_password.errors %}<p class="mt-1 text-xs text-red-600">{{ password_form.old_password.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                    <input type="password" name="new_password1" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    {% if password_form.new_password1.errors %}<p class="mt-1 text-xs text-red-600">{{ password_form.new_password1.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm New Password</label>
+                    <input type="password" name="new_password2" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    {% if password_form.new_password2.errors %}<p class="mt-1 text-xs text-red-600">{{ password_form.new_password2.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors tab-button" data-tab="info">
+                        Back
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
+                        Change Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function () {
+                const target = this.getAttribute('data-tab');
+
+                // Update active tab
+                tabs.forEach(t => {
+                    t.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+                    t.classList.add('text-gray-600', 'dark:text-gray-400');
+                });
+                this.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+                this.classList.remove('text-gray-600', 'dark:text-gray-400');
+
+                // Show content
+                contents.forEach(c => c.classList.add('hidden'));
+                document.getElementById(`tab-${target}`).classList.remove('hidden');
+            });
+        });
+
+        // Show error tab if needed
+        {% if password_error %}
+            document.querySelector('[data-tab="password"]').click();
+        {% endif %}
+    });
+</script>
+{% endblock %}
