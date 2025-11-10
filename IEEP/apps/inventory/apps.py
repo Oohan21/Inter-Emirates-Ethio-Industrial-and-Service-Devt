@@ -5,3 +5,5 @@ class InventoryConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.inventory'
 
+    def ready(self):
+        import apps.inventory.signals
