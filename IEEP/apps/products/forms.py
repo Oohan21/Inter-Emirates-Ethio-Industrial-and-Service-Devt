@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Category, UnitOfMeasure, BOM, BOMComponent
+from .models import Product, Category, UnitOfMeasure, BOM, BOMComponent, ProductImage
 from django.forms import inlineformset_factory
 
 class ProductForm(forms.ModelForm):
@@ -11,20 +11,18 @@ class ProductForm(forms.ModelForm):
             'specifications', 'is_active', 'reorder_threshold'
         ]
         widgets = {
-            'sku': forms.TextInput(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
-            'name': forms.TextInput(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
-            'description': forms.Textarea(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm', 'rows': 4}),
-            'product_type': forms.Select(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
-            'category': forms.Select(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
-            'unit_of_measure': forms.Select(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
-            'cost_price': forms.NumberInput(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm', 'step': '0.01'}),
-            'selling_price': forms.NumberInput(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm', 'step': '0.01'}),
-            'product_code': forms.TextInput(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm'}),
-            'specifications': forms.Textarea(attrs={'class': 'w-full rounded-md border-gray-300 shadow-sm', 'rows': 4}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 rounded'}),
-            'reorder_threshold': forms.NumberInput(
-                attrs={'step': '0.01', 'min': '0', 'class': 'w-full rounded-md border-gray-300 shadow-sm'}
-            ),
+            'sku': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}),
+            'name': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}),
+            'description': forms.Textarea(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'rows': 4}),
+            'product_type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}),
+            'category': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}),
+            'unit_of_measure': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}),
+            'cost_price': forms.NumberInput(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'step': '0.01'}),
+            'selling_price': forms.NumberInput(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'step': '0.01'}),
+            'product_code': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'}),
+            'specifications': forms.Textarea(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'rows': 4}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500'}),
+            'reorder_threshold': forms.NumberInput(attrs={'class': 'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm', 'step': '0.01', 'min': '0'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -33,6 +31,15 @@ class ProductForm(forms.ModelForm):
         self.fields['product_code'].required = False
         self.fields['description'].required = False
         self.fields['specifications'].required = False
+
+class ProductImageForm(forms.ModelForm):
+    class Meta:
+        model = ProductImage
+        fields = ['image', 'is_main']
+        widgets = {
+            'image': forms.FileInput(attrs={'class': 'hidden', 'accept': 'image/*'}),
+            'is_main': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-indigo-600 border-gray-300 rounded'}),
+        }
 
 class BOMForm(forms.ModelForm):
     class Meta:
