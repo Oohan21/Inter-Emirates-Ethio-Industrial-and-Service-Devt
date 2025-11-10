@@ -1,0 +1,745 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ stock_item.product.sku }} - Stock Details - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Stock Item Details</h1>
+    <p class="text-gray-600 dark:text-gray-400">Complete information for {{ stock_item.product.sku }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Stock Information -->
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">{{ stock_item.product.name }}</h2>
+                <p class="text-gray-600 dark:text-gray-400">{{ stock_item.product.sku }}</p>
+            </div>
+            <div class="flex space-x-2">
+                <span id="status-badge" class="px-3 py-1 text-sm rounded-full
+                    {% if stock_item.quantity <= 0 %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200
+                    {% elif stock_item.is_low_stock %}bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200
+                    {% else %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{% endif %}">
+                    {% if stock_item.quantity <= 0 %}Out of Stock
+                    {% elif stock_item.is_low_stock %}Low Stock
+                    {% else %}In Stock{% endif %}
+                </span>
+                <span class="px-3 py-1 text-sm rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                    {{ stock_item.warehouse.code }}
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Basic Information -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Basic Information</h3>
+                <div class="space-y-3">
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Warehouse</label><p class="mt-1 text-sm text-gray-900 dark:text-white">{{ stock_item.warehouse.name }}</p></div>
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label><p class="mt-1 text-sm text-gray-900 dark:text-white">{{ stock_item.location|default:"Main Storage" }}</p></div>
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Batch Number</label><p class="mt-1 text-sm text-gray-900 dark:text-white">{{ stock_item.batch_number|default:"Not specified" }}</p></div>
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Expiry Date</label><p class="mt-1 text-sm text-gray-900 dark:text-white">{{ stock_item.expiry_date|date:"M d, Y"|default:"No expiry" }}</p></div>
+                </div>
+            </div>
+
+            <!-- Stock Details -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Stock Details</h3>
+                <div class="space-y-3">
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Quantity</label>
+                        <p id="current-qty" class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                            {{ stock_item.quantity }} {{ stock_item.product.unit_of_measure.symbol }}
+                        </p>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit Cost</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">ETB {{ stock_item.unit_cost|floatformat:2|default:"—" }}</p>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Value</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">ETB {{ stock_item.total_value|floatformat:2 }}</p>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reorder Threshold</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ stock_item.reorder_threshold }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex flex-wrap gap-3">
+            <button onclick="openModal('adjustModal')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">Adjust Stock</button>
+            <button onclick="openModal('moveModal')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors">Transfer Stock</button>
+            {% if stock_item.is_low_stock or stock_item.quantity <= 0 %}
+            <button onclick="openModal('poModal')" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors">Create Purchase Order</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <!-- Product Information -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Product Information</h3>
+            <div class="space-y-3 text-sm">
+                <div><label class="block text-gray-700 dark:text-gray-300">Product Type</label><p class="text-gray-900 dark:text-white">{{ stock_item.product.get_product_type_display }}</p></div>
+                <div><label class="block text-gray-700 dark:text-gray-300">Category</label><p class="text-gray-900 dark:text-white">{{ stock_item.product.category.name|default:"Uncategorized" }}</p></div>
+                <div><label class="block text-gray-700 dark:text-gray-300">Unit of Measure</label><p class="text-gray-900 dark:text-white">{{ stock_item.product.unit_of_measure.name }}</p></div>
+                <div><label class="block text-gray-700 dark:text-gray-300">Product Status</label>
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full
+                        {% if stock_item.product.is_active %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{% else %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{% endif %}">
+                        {% if stock_item.product.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Transactions</h3>
+            <div id="recent-transactions" class="space-y-3">
+                {% for transaction in recent_transactions %}
+                <div class="text-sm border-b border-gray-200 dark:border-gray-600 pb-2 last:border-b-0 last:pb-0">
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-800 dark:text-white">{{ transaction.get_transaction_type_display }}</span>
+                        <span class="{% if transaction.quantity > 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                            {% if transaction.quantity > 0 %}+{% endif %}{{ transaction.quantity }}
+                        </span>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-xs">{{ transaction.created_at|date:"M d, Y H:i" }}</p>
+                    <p class="text-gray-600 dark:text-gray-300 text-xs">{{ transaction.reference|default:"Manual adjustment" }}</p>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center">No recent transactions</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+            <div class="space-y-2">
+                <button onclick="openModal('stockCountModal')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm transition-colors">Stock Count</button>
+                <button onclick="openModal('qualityCheckModal')" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded text-sm transition-colors">Quality Check</button>
+                <a href="{% url 'print-label' stock_item.id %}" class="block w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm text-center transition-colors">Print Label</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# -------------------------- MODALS -------------------------- #}
+
+<!-- Adjust Stock Modal -->
+<div id="adjustModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center hidden z-50">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md border border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Adjust Stock: <span id="adjustProduct">{{ stock_item.product.sku }}</span></h2>
+        <form id="adjustForm" method="post" action="{% url 'stock-adjustment-create' %}">
+            {% csrf_token %}
+            <input type="hidden" name="stock_item" value="{{ stock_item.id }}" />
+            <input type="hidden" name="transaction_type" value="adjustment" />
+            <input type="hidden" name="created_by" value="{{ request.user.id }}" />
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adjustment Type</label>
+                <select name="adjustment_type" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    <option value="set">Set to specific quantity</option>
+                    <option value="add">Add to current stock</option>
+                    <option value="subtract">Subtract from current stock</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span id="quantity-label">Quantity</span>
+                </label>
+                <input type="number" name="quantity" id="adjustQuantity" step="0.01" min="0" 
+                       class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                       required />
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Current: <span id="currentQuantity">{{ stock_item.quantity }}</span> {{ stock_item.product.unit_of_measure.symbol }}</p>
+                <p id="adjustment-help" class="text-xs text-blue-600 dark:text-blue-400 mt-1 hidden"></p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
+                <input type="text" name="reference" 
+                       class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                       placeholder="e.g., Stock count, Damage, etc." />
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea name="notes" rows="3" 
+                          class="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                          placeholder="Optional notes about this adjustment"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeModal('adjustModal')" 
+                        class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors">
+                    Adjust Stock
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transfer Stock Modal -->
+<div id="moveModal" class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 hidden flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Transfer Stock – {{ stock_item.product.sku }}</h3>
+        <form id="moveForm" data-url="{% url 'stock-transaction-create' %}">
+            {% csrf_token %}
+            <input type="hidden" name="stock_item" value="{{ stock_item.id }}">
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Source Warehouse</label>
+                <input type="text" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white" value="{{ stock_item.warehouse.name }} ({{ stock_item.warehouse.code }})" readonly>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Available: {{ stock_item.quantity }} {{ stock_item.product.unit_of_measure.symbol }}</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Destination Warehouse</label>
+                <select name="destination_warehouse" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    <option value="">Select destination warehouse</option>
+                    {% for wh in warehouses %}
+                        {% if wh.id != stock_item.warehouse.id %}
+                        <option value="{{ wh.id }}">{{ wh.name }} ({{ wh.code }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity to Transfer</label>
+                <input type="number" id="transfer-quantity" name="quantity" step="0.01" min="0.01" max="{{ stock_item.quantity }}" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Max: {{ stock_item.quantity }} {{ stock_item.product.unit_of_measure.symbol }}</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
+                <input type="text" name="reference" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="e.g., Internal transfer, Restocking, etc.">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea name="notes" rows="2" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Optional notes about this transfer"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeModal('moveModal')" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors">Transfer Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Purchase Order Modal -->
+<div id="poModal" class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 hidden flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Purchase Order – {{ stock_item.product.sku }}</h3>
+        <form id="poForm" data-url="{% url 'order-create' %}">
+            {% csrf_token %}
+            <input type="hidden" name="product" value="{{ stock_item.product.id }}">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity to Order</label>
+                <input type="number" name="quantity" step="0.01" min="1" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Warehouse (receive into)</label>
+                <select name="warehouse" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    {% for wh in warehouses %}
+                    <option value="{{ wh.id }}">{{ wh.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea name="notes" rows="2" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeModal('poModal')" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors">Create PO</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stock Count Modal -->
+<div id="stockCountModal" class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 hidden flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Stock Count – {{ stock_item.product.sku }}</h3>
+        <form id="stockCountForm" data-url="{% url 'stock-count-create' stock_item.id %}">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Counted Quantity</label>
+                <input type="number" name="counted_quantity" step="0.01" min="0" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Current: {{ stock_item.quantity }}</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea name="notes" rows="2" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeModal('stockCountModal')" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">Submit Count</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quality Check Modal -->
+<div id="qualityCheckModal" class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 hidden flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Quality Check – {{ stock_item.product.sku }}</h3>
+        <form id="qualityCheckForm" data-url="{% url 'quality-check-create' stock_item.id %}">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quality Status</label>
+                <select name="status" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    <option value="">Select status</option>
+                    <option value="pass">Pass</option>
+                    <option value="fail">Fail</option>
+                    <option value="partial">Partial</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea name="notes" rows="3" class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" required></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeModal('qualityCheckModal')" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">Submit Check</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-4 right-4 hidden px-6 py-3 rounded-lg shadow-lg text-white z-50 transition-opacity"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* ---------- Helper functions ---------- */
+function openModal(id) { 
+    document.getElementById(id).classList.remove('hidden'); 
+    
+    // Reset forms when opening modals
+    if (id === 'adjustModal') {
+        resetAdjustForm();
+    } else if (id === 'moveModal') {
+        resetTransferForm();
+    }
+}
+
+function closeModal(id) { 
+    document.getElementById(id).classList.add('hidden'); 
+}
+
+function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    if (!t) {
+        console.error('Toast element not found');
+        return;
+    }
+    
+    t.textContent = msg;
+    t.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-50 transition-opacity ${type==='error'?'bg-red-600':'bg-green-600'}`;
+    t.classList.remove('hidden');
+    setTimeout(() => {
+        if (t) {
+            t.classList.add('hidden');
+        }
+    }, 4000);
+}
+
+/* ---------- Adjustment Form Logic ---------- */
+function resetAdjustForm() {
+    const form = document.getElementById('adjustForm');
+    form.reset();
+    updateAdjustmentHelpText();
+}
+
+function updateAdjustmentHelpText() {
+    const type = document.querySelector('select[name="adjustment_type"]').value;
+    const currentQty = parseFloat('{{ stock_item.quantity }}');
+    const inputQty = parseFloat(document.querySelector('input[name="quantity"]').value) || 0;
+    
+    const quantityLabel = document.getElementById('quantity-label');
+    const helpText = document.getElementById('adjustment-help');
+    
+    let resultQty = currentQty;
+    let helpMessage = '';
+    
+    switch(type) {
+        case 'set':
+            quantityLabel.textContent = 'New Quantity';
+            resultQty = inputQty;
+            helpMessage = `Stock will be set to ${resultQty}`;
+            break;
+        case 'add':
+            quantityLabel.textContent = 'Quantity to Add';
+            resultQty = currentQty + inputQty;
+            helpMessage = `New total: ${currentQty} + ${inputQty} = ${resultQty}`;
+            break;
+        case 'subtract':
+            quantityLabel.textContent = 'Quantity to Subtract';
+            resultQty = currentQty - inputQty;
+            if (resultQty < 0) resultQty = 0;
+            helpMessage = `New total: ${currentQty} - ${inputQty} = ${resultQty}`;
+            break;
+    }
+    
+    if (inputQty > 0) {
+        helpText.textContent = helpMessage;
+        helpText.classList.remove('hidden');
+    } else {
+        helpText.classList.add('hidden');
+    }
+}
+
+// Add event listeners for adjustment form
+document.addEventListener('DOMContentLoaded', function() {
+    const adjustmentType = document.querySelector('select[name="adjustment_type"]');
+    const adjustmentQty = document.querySelector('input[name="quantity"]');
+    
+    if (adjustmentType && adjustmentQty) {
+        adjustmentType.addEventListener('change', updateAdjustmentHelpText);
+        adjustmentQty.addEventListener('input', updateAdjustmentHelpText);
+    }
+});
+
+/* ---------- AJAX Form Submit for Adjustment ---------- */
+document.getElementById('adjustForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const adjustmentType = formData.get('adjustment_type');
+    const quantity = parseFloat(formData.get('quantity'));
+    const currentQty = parseFloat('{{ stock_item.quantity }}');
+    
+    // Validate quantity based on adjustment type
+    if (adjustmentType === 'subtract' && quantity > currentQty) {
+        showToast('Cannot subtract more than available stock.', 'error');
+        return;
+    }
+    
+    if (quantity < 0) {
+        showToast('Quantity cannot be negative.', 'error');
+        return;
+    }
+    
+    // Calculate final quantity for the API
+    let finalQuantity = quantity;
+    if (adjustmentType === 'add') {
+        finalQuantity = currentQty + quantity;
+    } else if (adjustmentType === 'subtract') {
+        finalQuantity = currentQty - quantity;
+    }
+    // For 'set' type, use the quantity as-is
+    
+    // Create new form data with correct field names for the stock-adjustment-create endpoint
+    const adjustedFormData = new FormData();
+    adjustedFormData.append('stock_item', '{{ stock_item.id }}');
+    adjustedFormData.append('quantity', finalQuantity.toString());
+    adjustedFormData.append('transaction_type', 'adjustment');
+    adjustedFormData.append('created_by', '{{ request.user.id }}');
+    adjustedFormData.append('reference', formData.get('reference') || 'Manual adjustment');
+    adjustedFormData.append('notes', formData.get('notes') || '');
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: adjustedFormData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            throw new Error('Server returned non-JSON response');
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            closeModal('adjustModal');
+            showToast('Stock adjusted successfully.');
+            // Update the display with the new quantity
+            updateStockDisplay(finalQuantity, '{{ stock_item.product.unit_of_measure.symbol }}');
+            refreshTransactions();
+        } else {
+            showToast(data.error || 'Failed to adjust stock.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Server error. Please try again.', 'error');
+    });
+});
+
+/* ---------- Transfer Form Logic ---------- */
+function resetTransferForm() {
+    const form = document.getElementById('moveForm');
+    form.reset();
+    
+    // Set max quantity for transfer
+    const transferQty = document.getElementById('transfer-quantity');
+    if (transferQty) {
+        transferQty.max = '{{ stock_item.quantity }}';
+    }
+}
+
+/* ---------- AJAX Form Submit Functions ---------- */
+
+// Adjust Stock
+// Fix the adjustment form submission
+document.getElementById('adjustForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const adjustmentType = formData.get('adjustment_type');
+    const quantity = parseFloat(formData.get('quantity'));
+    const currentQty = parseFloat('{{ stock_item.quantity }}');
+    
+    // Validate quantity based on adjustment type
+    if (adjustmentType === 'subtract' && quantity > currentQty) {
+        showToast('Cannot subtract more than available stock.', 'error');
+        return;
+    }
+    
+    if (quantity < 0) {
+        showToast('Quantity cannot be negative.', 'error');
+        return;
+    }
+    
+    // Calculate final quantity for the API
+    let finalQuantity = quantity;
+    if (adjustmentType === 'add') {
+        finalQuantity = currentQty + quantity;
+    } else if (adjustmentType === 'subtract') {
+        finalQuantity = currentQty - quantity;
+    }
+    // For 'set' type, use the quantity as-is
+    
+    // Create new form data with correct field names
+    const adjustedFormData = new FormData();
+    adjustedFormData.append('stock_item_id', '{{ stock_item.id }}');
+    adjustedFormData.append('quantity', finalQuantity.toString());
+    adjustedFormData.append('reference', formData.get('reference') || 'Manual adjustment');
+    adjustedFormData.append('notes', formData.get('notes') || '');
+    
+    fetch(form.getAttribute('data-url'), {
+        method: 'POST',
+        body: adjustedFormData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            throw new Error('Server returned non-JSON response');
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            closeModal('adjustModal');
+            showToast(data.message || 'Stock adjusted successfully.');
+            updateStockDisplay(data.new_quantity, data.uom);
+            refreshTransactions();
+        } else {
+            showToast(data.error || 'Failed to adjust stock.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Server error. Please try again.', 'error');
+    });
+});
+
+// Transfer Stock
+// Fix the transfer form submission
+document.getElementById('moveForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const quantity = parseFloat(formData.get('quantity'));
+    const currentQty = parseFloat('{{ stock_item.quantity }}');
+    
+    // Validate transfer quantity
+    if (quantity <= 0) {
+        showToast('Transfer quantity must be greater than 0.', 'error');
+        return;
+    }
+    
+    if (quantity > currentQty) {
+        showToast('Transfer quantity cannot exceed available stock.', 'error');
+        return;
+    }
+    
+    const destination = formData.get('destination_warehouse');
+    if (!destination) {
+        showToast('Please select a destination warehouse.', 'error');
+        return;
+    }
+    
+    fetch(form.getAttribute('data-url'), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If it's HTML, it might be an error page
+            return response.text().then(html => {
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            closeModal('moveModal');
+            showToast(data.message || 'Stock transferred successfully.');
+            // Update current stock display (quantity decreases after transfer)
+            const newQty = currentQty - quantity;
+            updateStockDisplay(newQty, '{{ stock_item.product.unit_of_measure.symbol }}');
+            refreshTransactions();
+        } else {
+            showToast(data.error || 'Failed to transfer stock.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Transfer failed. Please check the console for details.', 'error');
+    });
+});
+
+/* ---------- Stock Count ---------- */
+document.getElementById('stockCountForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    submitSimpleForm('stockCountForm', () => refreshBadgeAndTransactions());
+});
+
+/* ---------- Quality Check ---------- */
+document.getElementById('qualityCheckForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    submitSimpleForm('qualityCheckForm', () => refreshBadgeAndTransactions());
+});
+
+/* ---------- Create PO ---------- */
+document.getElementById('poForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    submitSimpleForm('poForm', json => {
+        showToast(`PO ${json.order_number} created.`);
+    });
+});
+
+function submitSimpleForm(formId, afterSuccess) {
+    const form = document.getElementById(formId);
+    const url  = form.getAttribute('data-url');
+    const data = new FormData(form);
+
+    fetch(url, {
+        method: 'POST',
+        body: data,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            return response.text().then(html => {
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+    })
+    .then(json => {
+        if (json.success) {
+            closeModal(formId.replace('Form','Modal'));
+            showToast(json.message || 'Operation completed.');
+            if (afterSuccess) afterSuccess(json);
+        } else {
+            showToast(json.error || 'Something went wrong.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Form submission error:', error);
+        showToast('Network error. Please try again.', 'error');
+    });
+}
+
+/* ---------- Update UI after changes ---------- */
+function updateStockDisplay(newQuantity, uom) {
+    document.getElementById('current-qty').textContent = `${newQuantity} ${uom}`;
+    document.getElementById('adj-current').textContent = newQuantity;
+    
+    // Update status badge
+    const badge = document.getElementById('status-badge');
+    const lowStockThreshold = parseFloat('{{ stock_item.reorder_threshold }}');
+    
+    badge.className = 'px-3 py-1 text-sm rounded-full ';
+    if (newQuantity <= 0) {
+        badge.classList.add('bg-red-100', 'text-red-800');
+        badge.textContent = 'Out of Stock';
+    } else if (newQuantity <= lowStockThreshold) {
+        badge.classList.add('bg-yellow-100', 'text-yellow-800');
+        badge.textContent = 'Low Stock';
+    } else {
+        badge.classList.add('bg-green-100', 'text-green-800');
+        badge.textContent = 'In Stock';
+    }
+}
+
+function refreshTransactions() {
+    // Reload the recent transactions section
+    fetch(window.location.href, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newTransactions = doc.querySelector('#recent-transactions');
+        if (newTransactions) {
+            document.querySelector('#recent-transactions').innerHTML = newTransactions.innerHTML;
+        }
+    })
+    .catch(error => console.error('Error refreshing transactions:', error));
+}
+
+function refreshBadgeAndTransactions() {
+    refreshTransactions();
+    // The stock quantity will be updated via the success callback
+}
+</script>
+{% endblock %}
