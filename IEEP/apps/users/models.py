@@ -1,4 +1,3 @@
-# users/models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
@@ -23,6 +22,11 @@ class Role(models.Model):
     def __str__(self):
         return self.get_name_display()
 
+    @property
+    def role_name(self):
+        """For templates: {{ user.role.name }} → 'admin'"""
+        return self.get_name_display()
+
 class User(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True)
@@ -31,6 +35,7 @@ class User(AbstractUser):
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.username} - {self.get_full_name()}"
@@ -52,7 +57,6 @@ class AuditLog(models.Model):
     changes = models.TextField(blank=True, null=True)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     class Meta:
         indexes = [
