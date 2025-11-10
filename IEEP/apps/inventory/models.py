@@ -30,12 +30,35 @@ class Warehouse(models.Model):
     
     @property
     def low_stock_count(self):
-        return self.stock_items.filter(is_low_stock=True).count()
+        """Count items that are low stock (0 < quantity <= reorder_threshold)"""
+        from django.db.models import Q, F
+        return self.stock_items.filter(
+            Q(quantity__gt=0) & 
+            Q(quantity__lte=F('reorder_threshold'))
+        ).count()
+    
+    @property
+    def out_of_stock_count(self):
+        """Count items that are out of stock (quantity <= 0)"""
+        return self.stock_items.filter(quantity__lte=0).count()
+
+    @property
+    def _capacity_numeric(self):
+        """Extract numeric capacity from string field"""
+        if not self.capacity:
+            return 0
+        try:
+            import re
+            numbers = re.findall(r'\d+', self.capacity)
+            return float(numbers[0]) if numbers else 0
+        except (ValueError, IndexError):
+            return 0
     
     @property
     def usage_percentage(self):
-        if self.capacity and hasattr(self, '_capacity_numeric'):
-            return (self.total_items / self._capacity_numeric) * 100
+        capacity = self._capacity_numeric
+        if capacity > 0:
+            return (self.total_items / capacity) * 100
         return 0
 
 class StockItem(models.Model):
@@ -59,14 +82,6 @@ class StockItem(models.Model):
     last_low_stock_alert = models.DateTimeField(null=True, blank=True)
     alert_cooldown_days = models.PositiveSmallIntegerField(default=1)
     ALERT_COOLDOWN_HOURS = 24
-    
-    @property
-    def total_value(self):
-        return self.quantity * self.unit_cost if self.unit_cost else 0
-    
-    @property
-    def is_low_stock(self):
-        return self.quantity <= self.reorder_threshold and self.quantity > 0
 
     @property
     def should_send_alert(self):
@@ -74,17 +89,14 @@ class StockItem(models.Model):
         if not self.is_low_stock:
             return False
         
-        if self.last_alert_sent:
-            time_since_last_alert = timezone.now() - self.last_alert_sent
-            if time_since_last_alert < timedelta(hours=self.ALERT_COOLDOWN_HOURS):
-                return False
+        if not self.last_low_stock_alert:
+            return True
+        return (timezone.now() - self.last_low_stock_alert) > timedelta(hours=24)
         
-        return True
-    
     def mark_alert_sent(self):
         """Mark that an alert has been sent"""
-        self.last_alert_sent = timezone.now()
-        self.save(update_fields=['last_alert_sent'])
+        self.last_low_stock_alert = timezone.now()  
+        self.save(update_fields=['last_low_stock_alert'])
     
     @property
     def alert_recipients(self):
@@ -104,10 +116,6 @@ class StockItem(models.Model):
         
         return list(recipients)
     
-    @property
-    def is_expired(self):
-        return self.expiry_date and self.expiry_date < timezone.now().date()
-    
     class Meta:
         ordering = ['product__sku', 'batch_number']
         unique_together = ['product', 'warehouse', 'batch_number']
@@ -121,9 +129,6 @@ class StockItem(models.Model):
             models.Index(fields=['expiry_date']),
             models.Index(fields=['created_at', 'updated_at']),
         ]
-    
-    def __str__(self):
-        return f"{self.product.sku} at {self.warehouse.code} (Batch: {self.batch_number or '-'})"
     
     def __str__(self):
         return f"{self.product.sku} at {self.warehouse.code} (Batch: {self.batch_number or '-'})"
@@ -181,6 +186,7 @@ class StockTransaction(models.Model):
         ('out', 'Stock Out'),
         ('adjustment', 'Adjustment'),
         ('transfer', 'Transfer'),
+        ('quality', 'Quality Check'),
     )
     
     stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE, related_name='transactions')
@@ -194,20 +200,37 @@ class StockTransaction(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['stock_item', 'created_at']),
+            models.Index(fields=['transaction_type']),
+            models.Index(fields=['created_at']),
+        ]
     
     def __str__(self):
-        return f"{self.stock_item.product.sku} - {self.get_transaction_type_display()}"
+        return f"{self.stock_item.product.sku} - {self.get_transaction_type_display()} - {self.quantity}"
     
     def save(self, *args, **kwargs):
+        creating = not self.pk
+        
+        if creating:
+            if not self.reference:
+                self.reference = f"{self.get_transaction_type_display().replace(' ', '')}-{timezone.now().strftime('%Y%m%d')}"
+            
+            super().save(*args, **kwargs)
+            self.update_stock_quantity()
+        else:
+            super().save(*args, **kwargs)
+    
+    def update_stock_quantity(self):
+        """Update stock item quantity based on transaction type and quantity difference"""
         if self.transaction_type == 'in':
             self.stock_item.quantity += self.quantity
         elif self.transaction_type == 'out':
             self.stock_item.quantity -= self.quantity
         elif self.transaction_type == 'adjustment':
-            self.stock_item.quantity = self.quantity
+            self.stock_item.quantity += self.quantity
         
         self.stock_item.save()
-        super().save(*args, **kwargs)
 
 class ReorderAlert(models.Model):
     stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE, related_name='reorder_alerts')
@@ -240,7 +263,7 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     )
     
-    order_number = models.CharField(max_length=50, unique=True)
+    order_number = models.CharField(max_length=50, unique=True, blank=True)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, related_name='orders')
     status = models.CharField(max_length=20, choices=ORDER_STATUS, default='pending')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -253,6 +276,17 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.order_number}"
     
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            self.order_number = self.generate_order_number()
+        super().save(*args, **kwargs)
+
+    def generate_order_number(self):
+        prefix = "PO"
+        date_str = timezone.now().strftime("%Y%m%d")
+        unique_id = uuid.uuid4().hex[:6].upper()
+        return f"{prefix}-{date_str}-{unique_id}"
+        
     def update_stock(self):
         """Update stock quantities when order is confirmed."""
         if self.status != 'confirmed':
