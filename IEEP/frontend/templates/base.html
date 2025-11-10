@@ -1,36 +1,58 @@
-<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Inter Emirates Ethio Paint ERP{% endblock %}</title>
+    {% load static %}
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
     <script
       src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
       defer
     ></script>
+    <link href="{% static 'css/dark-mode.css' %}" rel="stylesheet" />
     {% block extra_css %}{% endblock %}
   </head>
-  <body class="bg-gray-100">
-    <div
-      x-data="{ sidebarOpen: false, userMenuOpen: false }"
-      class="flex h-screen"
-    >
+  <body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
+    <div x-data="navbarState()" class="flex h-screen">
       <!-- Sidebar -->
       <div
-        class="bg-blue-800 text-white w-64 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-200 ease-in-out z-30"
-        :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }"
+        class="bg-blue-800 dark:bg-blue-900 text-white fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-200 ease-in-out z-30 overflow-hidden"
+        :class="{ 
+          'translate-x-0': sidebarOpen, 
+          '-translate-x-full': !sidebarOpen, 
+          'w-20': sidebarCollapsed, 
+          'w-64': !sidebarCollapsed 
+        }"
       >
-        <div class="p-4 border-b border-blue-700">
-          <h1 class="text-xl font-bold">Inter Emirates ERP</h1>
-          <p class="text-blue-200 text-sm">Paint Industry</p>
+        <div
+          class="p-4 border-b border-blue-700 dark:border-blue-800 flex items-center justify-between"
+        >
+          <a href="{% url 'dashboard' %}" class="flex items-center">
+            <h1
+              class="text-xl font-bold"
+              :class="{ 'hidden': sidebarCollapsed }"
+            >
+              Inter Emirates Ethio
+            </h1>
+            <p
+              class="text-blue-200 dark:text-blue-300 text-sm ml-2"
+              :class="{ 'hidden': sidebarCollapsed }"
+            >
+              Paint Industry
+            </p>
+          </a>
         </div>
         <nav class="mt-4">
-          <!-- FIXED: Changed 'home' to 'dashboard' -->
+          <!-- Dashboard -->
           <a
             href="{% url 'dashboard' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if request.path == '/' %}bg-blue-700{% endif %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-900 dark:bg-blue-800{% endif %}"
           >
             <svg
               class="w-5 h-5 mr-3"
@@ -43,13 +65,16 @@
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              ></path>
+              />
             </svg>
-            Dashboard
+            <span :class="{ 'hidden': sidebarCollapsed }">Dashboard</span>
           </a>
+
+          <!-- Products -->
+          {% if user.role.name in 'admin,production_manager,procurement,finance,viewer' %}
           <a
             href="{% url 'product-list' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'products' in request.path %}bg-blue-700{% endif %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'product' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
           >
             <svg
               class="w-5 h-5 mr-3"
@@ -62,65 +87,17 @@
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              ></path>
+              />
             </svg>
-            Products
+            <span :class="{ 'hidden': sidebarCollapsed }">Products</span>
           </a>
-          <a
-            href="{% url 'stock-item-list' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'inventory' in request.path %}bg-blue-700{% endif %}"
-          >
-            <svg
-              class="w-5 h-5 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              ></path>
-            </svg>
-            Inventory
-          </a>
-          <a
-    href="{% url 'user-list' %}"
-    class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'users' in request.path %}bg-blue-700{% endif %}"
-  >
-    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 4.354a4 4 0 110 5.292M15 21h-6a4 4 0 01-4-4v-1a4 4 0 014-4h6a4 4 0 014 4v1a4 4 0 01-4 4z"></path>
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"></path>
-    </svg>
-    Users
-  </a>
-          <a href="{% url 'notification-list' %}" 
-          class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'inventory' in request.path %}bg-blue-700{% endif %}">
-            <svg
-              class="w-5 h-5 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              ></path>
-            </svg>
-            <span
-              id="unread-badge"
-              class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden"
-            ></span>
-            Notification
-          </a>
+          {% endif %}
+
+          <!-- Production -->
+          {% if user.role.name in 'admin,production_manager,maintenance_engineer' %}
           <a
             href="{% url 'work-order-list' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'production' in request.path %}bg-blue-700{% endif %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'production' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
           >
             <svg
               class="w-5 h-5 mr-3"
@@ -132,14 +109,64 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              ></path>
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
             </svg>
-            Production
+            <span :class="{ 'hidden': sidebarCollapsed }">Production</span>
           </a>
+          {% endif %}
+
+          <!-- Inventory -->
+          {% if user.role.name in 'admin,inventory_clerk,production_manager,procurement' %}
           <a
-            href="{% url 'maintenance-order-list' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'maintenance' in request.path %}bg-blue-700{% endif %}"
+            href="{% url 'stock-item-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'inventory' in request.path or 'stock' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+              />
+            </svg>
+            <span :class="{ 'hidden': sidebarCollapsed }">Inventory</span>
+          </a>
+          {% endif %}
+
+          <!-- Procurement -->
+          {% if user.role.name in 'admin,procurement' %}
+          <a
+            href="{% url 'purchase-order-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'procurement' in request.path or 'requisition' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            <span :class="{ 'hidden': sidebarCollapsed }">Procurement</span>
+          </a>
+          {% endif %}
+
+          <!-- Maintenance -->
+          {% if user.role.name in 'admin,maintenance_engineer' %}
+          <a
+            href="{% url 'maintenance-dashboard' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'maintenance' in request.path %}bg-blue-700 dark:bg-blue-800{% endif %}"
           >
             <svg
               class="w-5 h-5 mr-3"
@@ -160,49 +187,15 @@
                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
               ></path>
             </svg>
-            Maintenance
+            <span :class="{ 'hidden': sidebarCollapsed }">Maintenance</span>
           </a>
-          <a
-            href="{% url 'purchase-order-list' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'procurement' in request.path %}bg-blue-700{% endif %}"
-          >
-            <svg
-              class="w-5 h-5 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              ></path>
-            </svg>
-            Procurement
-          </a>
-          <a
-            href="{% url 'qc-record-list' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'quality' in request.path %}bg-blue-700{% endif %}"
-          >
-            <svg
-              class="w-5 h-5 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
-            Quality Control
-          </a>
+          {% endif %}
+
+          <!-- Finance -->
+          {% if user.role.name in 'admin,finance' %}
           <a
             href="{% url 'transaction-list' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'finance' in request.path %}bg-blue-700{% endif %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'finance' in request.path %}bg-blue-700 dark:bg-blue-800{% endif %}"
           >
             <svg
               class="w-5 h-5 mr-3"
@@ -217,11 +210,38 @@
                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
               ></path>
             </svg>
-            Finance
+            <span :class="{ 'hidden': sidebarCollapsed }">Finance</span>
           </a>
+          {% endif %}
+
+          <!-- Quality -->
+          {% if user.role.name in 'admin,production_manager,maintenance_engineer' %}
+          <a
+            href="{% url 'qc-record-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'quality' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span :class="{ 'hidden': sidebarCollapsed }">Quality</span>
+          </a>
+          {% endif %}
+
+          <!-- Reports -->
+          {% if user.role.name in 'admin,finance,production_manager' %}
           <a
             href="{% url 'stock-ledger' %}"
-            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 {% if 'reports' in request.path %}bg-blue-700{% endif %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'reports' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
           >
             <svg
               class="w-5 h-5 mr-3"
@@ -234,100 +254,366 @@
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              ></path>
+              />
             </svg>
-            Reports
+            <span :class="{ 'hidden': sidebarCollapsed }">Reports</span>
           </a>
+          {% endif %}
+
+          <!-- Users (Admin Only) -->
+          {% if user.role.name == 'admin' %}
+          <a
+            href="{% url 'user-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'users' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H9a2 2 0 01-2-2v-1a6 6 0 0112 0v1a2 2 0 01-2 2zm-6-2h6"
+              />
+            </svg>
+            <span :class="{ 'hidden': sidebarCollapsed }">Users</span>
+          </a>
+          {% endif %}
+
+          <!-- Audit Logs (Admin Only) -->
+          {% if user.role.name == 'admin' %}
+          <a
+            href="{% url 'audit-log-list' %}"
+            class="flex items-center px-4 py-3 text-blue-100 hover:bg-blue-700 dark:hover:bg-blue-800 {% if 'audit' in request.path %}bg-blue-900 dark:bg-blue-800{% endif %}"
+          >
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span :class="{ 'hidden': sidebarCollapsed }">Audit Logs</span>
+          </a>
+          {% endif %}
         </nav>
       </div>
 
       <!-- Main Content -->
-      <div class="flex-1 flex flex-col md:ml-64">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b">
-          <div class="flex items-center justify-between p-4">
-            <button
-              @click="sidebarOpen = !sidebarOpen"
-              class="md:hidden p-2 rounded-md hover:bg-gray-100"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                ></path>
-              </svg>
-            </button>
-
-            <!-- ---------- Header (replace the old <div class="flex items-center space-x-4"> block) ---------- -->
-<div class="flex items-center space-x-4">
-  <!-- User menu (dropdown) -->
-  <div x-data="{ open: false }" class="relative">
-    <button
-      @click="open = !open"
-      class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
-    >
-      <!-- Avatar (optional – falls back to initials) -->
       <div
-        id="user-avatar"
-        class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium"
+        class="flex-1 flex flex-col"
+        :class="{ 'md:ml-20': sidebarCollapsed, 'md:ml-64': !sidebarCollapsed }"
       >
-        <!-- Filled by JS -->
-      </div>
+        <!-- Header -->
+        <header
+          class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700"
+        >
+          <div class="flex items-center justify-between p-4">
+            <div class="flex items-center space-x-2">
+              <button
+                @click="sidebarOpen = !sidebarOpen"
+                class="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              >
+                <svg
+                  class="w-6 h-6 dark:text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  ></path>
+                </svg>
+              </button>
+              <button
+                @click="toggleSidebar()"
+                class="hidden md:flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                :class="{ 'bg-gray-100 dark:bg-gray-700': sidebarCollapsed }"
+              >
+                <svg
+                  class="w-5 h-5 text-gray-600 dark:text-gray-300 transition-transform duration-200"
+                  :class="{ 'rotate-180': sidebarCollapsed }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  ></path>
+                </svg>
+                <span class="sr-only">Toggle Sidebar</span>
+              </button>
+              <div
+                class="text-sm text-gray-500 dark:text-gray-400 hidden md:block"
+              >
+                <span
+                  x-text="sidebarCollapsed ? 'Collapsed' : 'Expanded'"
+                ></span>
+              </div>
+            </div>
 
-      <span id="user-info" class="text-sm font-medium">Loading…</span>
+            <div class="flex items-center space-x-4">
+              <!-- Dark Mode Toggle -->
+              <button
+                @click="toggleDarkMode()"
+                class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
+              >
+                <!-- Moon icon for light mode -->
+                <svg
+                  x-show="!darkMode"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+                <!-- Sun icon for dark mode -->
+                <svg
+                  x-show="darkMode"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              </button>
 
-      <svg
-        class="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </button>
+              <!-- Notifications -->
+              <div x-data="{ open: false }" class="relative">
+                <button
+                  @click="open = !open"
+                  class="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    ></path>
+                  </svg>
+                  <span
+                    id="unread-badge"
+                    class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden"
+                  ></span>
+                </button>
 
-    <!-- Dropdown -->
-    <div
-      x-show="open"
-      @click.away="open = false"
-      x-transition
-      class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-    >
-      <a
-        href="{% url 'profile' %}"
-        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >My Profile</a
-      >
-      <hr class="border-gray-200" />
-      <button
-        id="logout-btn"
-        class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-        >Logout</button
-      >
-    </div>
-  </div>
-</div>
+                <div
+                  x-show="open"
+                  @click.away="open = false"
+                  class="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50"
+                >
+                  <div class="p-4 border-b dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                      <a
+                        href="{% url 'notification-list' %}"
+                        class="flex items-center text-gray-900 dark:text-white"
+                      >
+                        <svg
+                          class="w-5 h-5 mr-3 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                          ></path>
+                        </svg>
+                        <span class="text-lg font-semibold"
+                          >Alerts & Messages</span
+                        >
+                      </a>
+                      <span
+                        id="unread-badge"
+                        class="bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden"
+                      ></span>
+                    </div>
+                  </div>
+
+                  <!-- Quick Actions -->
+                  <div
+                    class="p-3 bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600"
+                  >
+                    <div class="flex space-x-2">
+                      <a
+                        href="{% url 'message-send' %}"
+                        class="flex-1 text-center bg-blue-500 hover:bg-blue-600 text-white text-xs py-2 px-3 rounded transition duration-200"
+                      >
+                        New Message
+                      </a>
+                      <a
+                        href="{% url 'ticket-create' %}"
+                        class="flex-1 text-center bg-green-500 hover:bg-green-600 text-white text-xs py-2 px-3 rounded transition duration-200"
+                      >
+                        New Ticket
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="max-h-96 overflow-y-auto">
+                    <div
+                      id="notification-list"
+                      class="divide-y divide-gray-100 dark:divide-gray-700"
+                    >
+                      <!-- Notifications will be populated here -->
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="p-3 border-t dark:border-gray-600">
+                      <div class="grid grid-cols-2 gap-2 text-xs">
+                        <a
+                          href="{% url 'message-inbox' %}"
+                          class="text-center text-blue-600 dark:text-blue-400 hover:underline py-1"
+                        >
+                          Inbox
+                        </a>
+                        <a
+                          href="{% url 'ticket-list' %}"
+                          class="text-center text-green-600 dark:text-green-400 hover:underline py-1"
+                        >
+                          My Tickets
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- User menu -->
+              <div x-data="{ open: false }" class="relative">
+                <button
+                  @click="open = !open"
+                  class="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                >
+                  <div class="flex items-center space-x-2">
+                    <img
+                      id="navbar-profile-pic"
+                      src=""
+                      alt="Profile"
+                      class="w-8 h-8 rounded-full object-cover hidden"
+                    />
+                    <div
+                      id="navbar-initials"
+                      class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm"
+                    ></div>
+                    <div class="text-left hidden md:block">
+                      <div
+                        id="navbar-username"
+                        class="text-sm font-medium"
+                      ></div>
+                      <div
+                        class="text-xs text-gray-500 dark:text-gray-400 capitalize"
+                        id="navbar-role"
+                      ></div>
+                    </div>
+                  </div>
+                  <svg
+                    class="w-4 h-4 transition-transform duration-200"
+                    :class="{ 'rotate-180': open }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                <div
+                  x-show="open"
+                  @click.away="open = false"
+                  class="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50 py-1"
+                >
+                  <a
+                    href="{% url 'profile' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  >
+                    <svg
+                      class="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    Profile
+                  </a>
+                  <a
+                    href="{% url 'logout' %}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  >
+                    <svg
+                      class="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    Logout
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
         </header>
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto p-6">
+        <main class="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900">
           {% if messages %}
-          <div class="mb-6">
+          <div class="mb-6 space-y-3">
             {% for message in messages %}
             <div
-              class="p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}"
+              class="p-4 rounded-lg border {% if message.tags == 'success' %}bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300{% elif message.tags == 'error' %}bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300{% else %}bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300{% endif %}"
             >
               {{ message|safe }}
             </div>
@@ -341,96 +627,223 @@
       <div
         x-show="sidebarOpen"
         @click="sidebarOpen = false"
-        class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+        class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden transition-opacity duration-200"
       ></div>
     </div>
 
     <script>
-      // Authentication and notification handling
-      document.addEventListener("DOMContentLoaded", function () {
-        // Check authentication
-        fetch("/api/auth/profile/")
-          .then((response) => {
-            if (!response.ok) {
-              window.location.href = "/login/";
+      // Navbar State Management
+      function navbarState() {
+        return {
+          sidebarOpen: false,
+          sidebarCollapsed: false,
+          darkMode: false,
+
+          // In your base.html navbarState function, update the init section
+          init() {
+            // Load sidebar state from localStorage
+            const savedState = localStorage.getItem("sidebarCollapsed");
+            if (savedState !== null) {
+              this.sidebarCollapsed = JSON.parse(savedState);
             }
-            return response.json();
-          })
-          .then((data) => {
-            document.getElementById("user-info").textContent = `Welcome, ${
-              data.first_name || data.username
-            }`;
-          })
-          .catch((error) => {
-            console.error("Auth check failed:", error);
-            window.location.href = "/login/";
-          });
 
-        // Logout handler
-        document
-          .getElementById("logout-btn")
-          .addEventListener("click", function () {
-            fetch("/api/auth/logout/", {
-              method: "POST",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-              },
-            }).then(() => {
-              window.location.href = "/login/";
-            });
-          });
+            // Load dark mode state with better error handling
+            const savedDarkMode = localStorage.getItem("darkMode");
+            if (savedDarkMode !== null) {
+              this.darkMode = JSON.parse(savedDarkMode);
+            } else {
+              // Check system preference
+              this.darkMode = window.matchMedia(
+                "(prefers-color-scheme: dark)"
+              ).matches;
+            }
+            this.applyDarkMode();
 
-        function getCookie(name) {
-          let cookieValue = null;
-          if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-              const cookie = cookies[i].trim();
-              if (cookie.substring(0, name.length + 1) === name + "=") {
-                cookieValue = decodeURIComponent(
-                  cookie.substring(name.length + 1)
-                );
-                break;
+            // Close mobile sidebar on larger screens
+            this.$watch("sidebarOpen", (value) => {
+              if (window.innerWidth >= 768) {
+                this.sidebarOpen = false;
               }
-            }
-          }
-          return cookieValue;
-        }
-        const ws = new WebSocket(
-          `ws://${window.location.host}/ws/notifications/`
-        );
+            });
+          },
 
-        ws.onmessage = function (e) {
-          const payload = JSON.parse(e.data);
-          if (payload.type === "low_stock") {
-            const d = payload.data;
-            Toastify({
-              text: `<strong>${d.title}</strong><br>${d.message}<br><a href="${d.url}" class="text-white underline">View</a>`,
-              duration: 10000,
-              gravity: "top",
-              position: "right",
-              backgroundColor: "#ef4444",
-              escapeMarkup: false,
-            }).showToast();
-          }
+          toggleSidebar() {
+            this.sidebarCollapsed = !this.sidebarCollapsed;
+            // Save state to localStorage
+            localStorage.setItem("sidebarCollapsed", this.sidebarCollapsed);
+          },
+
+          toggleDarkMode() {
+            this.darkMode = !this.darkMode;
+            this.applyDarkMode();
+            localStorage.setItem("darkMode", this.darkMode);
+          },
+
+          applyDarkMode() {
+            if (this.darkMode) {
+              document.documentElement.classList.add("dark");
+            } else {
+              document.documentElement.classList.remove("dark");
+            }
+          },
         };
+      }
 
-        // ---------- Unread-count badge ----------
-        function updateBadge() {
-          fetch('{% url "unread-count" %}')
-            .then((r) => r.json())
-            .then((data) => {
-              const badge = document.getElementById("unread-badge");
-              if (data.count > 0) {
-                badge.textContent = data.count > 99 ? "99+" : data.count;
-                badge.classList.remove("hidden");
-              } else {
-                badge.classList.add("hidden");
-              }
-            });
+      // CSRF Helper
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              );
+              break;
+            }
+          }
         }
-        setInterval(updateBadge, 30000);
-        updateBadge();
+        return cookieValue;
+      }
+      const csrftoken = getCookie("csrftoken");
+
+      // ========== LOAD USER PROFILE ==========
+      async function loadUserProfile() {
+        try {
+          const response = await fetch("/api/auth/profile/api", {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "X-CSRFToken": csrftoken,
+              Accept: "application/json",
+            },
+          });
+
+          if (response.status === 401) {
+            if (!window.location.pathname.includes("/login/")) {
+              window.location.href =
+                "/api/auth/login/?next=" +
+                encodeURIComponent(window.location.pathname);
+            }
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error("Failed to load profile");
+          }
+
+          const user = await response.json();
+
+          // Update navbar
+          const usernameEl = document.getElementById("navbar-username");
+          const roleEl = document.getElementById("navbar-role");
+          const picEl = document.getElementById("navbar-profile-pic");
+          const initialsEl = document.getElementById("navbar-initials");
+
+          if (usernameEl) {
+            usernameEl.textContent = user.first_name || user.username;
+          }
+
+          if (roleEl && user.role) {
+            roleEl.textContent = user.role.name || user.role;
+          }
+
+          if (user.profile_picture) {
+            picEl.src = user.profile_picture;
+            picEl.classList.remove("hidden");
+            initialsEl.classList.add("hidden");
+          } else {
+            const firstName = user.first_name || "";
+            const lastName = user.last_name || "";
+            const initials =
+              (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() ||
+              user.username.charAt(0).toUpperCase();
+            initialsEl.textContent = initials;
+            initialsEl.classList.remove("hidden");
+            picEl.classList.add("hidden");
+          }
+        } catch (err) {
+          console.warn("Profile load error:", err);
+        }
+      }
+
+      // ========== NOTIFICATIONS ==========
+      const ws = new WebSocket(
+        `ws://${window.location.host}/ws/notifications/`
+      );
+
+      ws.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        if (data.type === "low_stock") {
+          showNotification(data.data);
+          updateBadge();
+        }
+      };
+
+      function showNotification(notif) {
+        const list = document.getElementById("notification-list");
+        const item = document.createElement("div");
+        item.className =
+          "p-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200";
+        item.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <p class="font-medium text-sm text-gray-900 dark:text-white">${
+                      notif.title
+                    }</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">${
+                      notif.message
+                    }</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">${new Date().toLocaleTimeString()}</p>
+                </div>
+                <a href="${
+                  notif.url
+                }" class="text-blue-600 dark:text-blue-400 text-xs hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200 ml-2">View</a>
+            </div>
+        `;
+        list.prepend(item);
+
+        // Toast notification
+        if (typeof Toastify !== "undefined") {
+          Toastify({
+            text: `${notif.title}<br><small>${notif.message}</small>`,
+            duration: 6000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "#ef4444",
+            escapeMarkup: false,
+          }).showToast();
+        }
+      }
+
+      function updateBadge() {
+        fetch("/api/notifications/unread-count/")
+          .then((r) => r.json())
+          .then((d) => {
+            const badge = document.getElementById("unread-badge");
+            if (d.count > 0) {
+              badge.textContent = d.count > 99 ? "99+" : d.count;
+              badge.classList.remove("hidden");
+            } else {
+              badge.classList.add("hidden");
+            }
+          });
+      }
+
+      // Poll every 30s as fallback
+      setInterval(updateBadge, 30000);
+      updateBadge();
+
+      // ========== ON LOAD ==========
+      document.addEventListener("DOMContentLoaded", loadUserProfile);
+
+      // Handle window resize
+      window.addEventListener("resize", function () {
+        if (window.innerWidth >= 768) {
+          // Close mobile sidebar on desktop
+          Alpine.store("navbarState").sidebarOpen = false;
+        }
       });
     </script>
 
