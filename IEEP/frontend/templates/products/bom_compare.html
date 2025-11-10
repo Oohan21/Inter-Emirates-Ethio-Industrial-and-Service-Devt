@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Compare BOM Versions{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Compare BOM Versions</h1>
+    <p class="text-gray-600 dark:text-gray-400">Select product to compare versions</p>
+</div>
+
+<!-- Product Select -->
+<form method="get" class="mb-6">
+    <select name="product" class="w-full md:w-1/3 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        <option value="">Select Product</option>
+        {% for p in products %}
+        <option value="{{ p.pk }}" {% if selected_product == p.pk %}selected{% endif %}>{{ p.sku }} - {{ p.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+        Compare
+    </button>
+</form>
+
+{% if boms %}
+<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Version</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Cost</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Components</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {% for bom in boms %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ bom.version }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="{% if bom.is_active %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{% elif bom.is_draft %}bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200{% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200{% endif %} px-2 py-1 rounded-full text-xs font-medium">
+                        {% if bom.is_active %}Active{% elif bom.is_draft %}Draft{% else %}Inactive{% endif %}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">ETB {{ bom.total_cost|floatformat:2 }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ bom.components.count }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <a href="{% url 'bom-detail' bom.pk %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
+                        View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-12">
+    <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">📋</div>
+    <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400">No versions found</h3>
+    <p class="text-gray-500 dark:text-gray-400">Select a product above to compare BOM versions</p>
+</div>
+{% endif %}
+{% endblock %}

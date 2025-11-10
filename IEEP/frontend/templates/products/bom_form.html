@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Create BOM - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+    <h1 class="text-2xl font-bold mb-2 dark:text-white">Create New Bill of Materials</h1>
+    <p class="text-gray-600 dark:text-gray-400 mb-6">Define components, costs and production instructions.</p>
+
+    <form method="post" id="bom-form">
+        {% csrf_token %}
+
+        <!-- ==================== BOM Header ==================== -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 dark:text-white">BOM Header</h2>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-medium mb-1 dark:text-gray-300">BOM Code *</label>
+                    {{ form.bom_code|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                    {% if form.bom_code.errors %}
+                        <p class="text-red-600 text-xs mt-1">{{ form.bom_code.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block font-medium mb-1 dark:text-gray-300">Product *</label>
+                    {{ form.product|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                    {% if form.product.errors %}
+                        <p class="text-red-600 text-xs mt-1">{{ form.product.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block font-medium mb-1 dark:text-gray-300">Version</label>
+                    {{ form.version|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                </div>
+
+                <div>
+                    <label class="block font-medium mb-1 dark:text-gray-300">Effective Date</label>
+                    {{ form.effective_date|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                </div>
+
+                <div>
+                    <label class="block font-medium mb-1 dark:text-gray-300">Labor Cost</label>
+                    {{ form.labor_cost|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                </div>
+
+                <div>
+                    <label class="block font-medium mb-1 dark:text-gray-300">Overhead Cost</label>
+                    {{ form.overhead_cost|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                </div>
+
+                <div>
+                    <label class="block font-medium mb-1 dark:text-gray-300">Expected Yield %</label>
+                    {{ form.expected_yield_percentage|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-medium mb-1 dark:text-gray-300">Description</label>
+                    {{ form.description|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" }}
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-medium mb-1 dark:text-gray-300">Production Instructions</label>
+                    {{ form.instructions|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white h-32" }}
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== COMPONENTS ==================== -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold dark:text-white">Components</h2>
+                <button type="button" id="add-component"
+                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm">
+                    Add Component
+                </button>
+            </div>
+
+            <div id="component-container">
+                {{ components.management_form }}
+                {% for comp_form in components %}
+                <div class="component-form border dark:border-gray-600 rounded p-4 mb-4 bg-gray-50 dark:bg-gray-700">
+                    <div class="grid md:grid-cols-5 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium dark:text-gray-300">Component</label>
+                            {{ comp_form.component|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white" }}
+                            {% if comp_form.component.errors %}
+                                <p class="text-red-600 text-xs mt-1">{{ comp_form.component.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium dark:text-gray-300">Qty</label>
+                            {{ comp_form.quantity|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white" }}
+                            {% if comp_form.quantity.errors %}
+                                <p class="text-red-600 text-xs mt-1">{{ comp_form.quantity.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium dark:text-gray-300">Unit Cost</label>
+                            {{ comp_form.unit_cost|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white" }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium dark:text-gray-300">Waste %</label>
+                            {{ comp_form.waste_percentage|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white" }}
+                        </div>
+                        <div class="flex items-end">
+                            {% if comp_form.instance.pk %}
+                                {{ comp_form.DELETE|add_class:"hidden" }}
+                                <label for="{{ comp_form.DELETE.id_for_label }}" class="ml-2 cursor-pointer text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm">
+                                    Delete
+                                </label>
+                            {% else %}
+                                <button type="button" class="remove-component text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm">Remove</button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="block text-sm font-medium dark:text-gray-300">Notes</label>
+                        {{ comp_form.notes|add_class:"w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white" }}
+                    </div>
+
+                    {% for hidden in comp_form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+                <div class="flex justify-between">
+                    <span class="font-semibold dark:text-white">Estimated Material Cost:</span>
+                    <span id="material-total" class="font-bold text-blue-700 dark:text-blue-400">ETB 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ACTIONS ==================== -->
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'bom-list' %}" class="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                Cancel
+            </a>
+            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Save as Draft
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('component-container');
+    const addBtn = document.getElementById('add-component');
+    const totalForms = document.getElementById('id_components-TOTAL_FORMS');
+    
+    // Get initial form count
+    let formCount = container.querySelectorAll('.component-form').length;
+    let formIdx = formCount;
+
+    // Add new component form
+    addBtn.addEventListener('click', () => {
+        const forms = container.querySelectorAll('.component-form');
+        if (forms.length === 0) {
+            alert('No template form found!');
+            return;
+        }
+
+        const templateForm = forms[0];
+        const newForm = templateForm.cloneNode(true);
+        
+        // Clear all input values in the new form
+        newForm.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.name && !el.name.includes('DELETE') && el.type !== 'hidden') {
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else if (el.type === 'select-one') {
+                    el.selectedIndex = 0;
+                } else {
+                    el.value = '';
+                }
+            }
+        });
+
+        // Update all names and IDs to use the new index
+        newForm.innerHTML = newForm.innerHTML.replace(/components-\d+-/g, `components-${formIdx}-`);
+        
+        // Ensure remove button is present for new forms
+        const removeSection = newForm.querySelector('.flex.items-end');
+        if (removeSection) {
+            // Remove any existing delete checkbox and label
+            const deleteCheckbox = removeSection.querySelector('input[type="checkbox"]');
+            const deleteLabel = removeSection.querySelector('label[for*="DELETE"]');
+            if (deleteCheckbox) deleteCheckbox.remove();
+            if (deleteLabel) deleteLabel.remove();
+            
+            // Add remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-component text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm';
+            removeBtn.textContent = 'Remove';
+            removeSection.appendChild(removeBtn);
+        }
+
+        // Add the new form to container
+        container.appendChild(newForm);
+        
+        // Update total forms count
+        formCount++;
+        formIdx++;
+        totalForms.value = formCount;
+        
+        // Recalculate costs
+        calcMaterialCost();
+    });
+
+    // Remove component form
+    container.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-component')) {
+            const formToRemove = e.target.closest('.component-form');
+            const forms = container.querySelectorAll('.component-form');
+            
+            if (forms.length > 1) {
+                formToRemove.remove();
+                formCount--;
+                
+                // Re-index all remaining forms
+                const remainingForms = container.querySelectorAll('.component-form');
+                remainingForms.forEach((form, index) => {
+                    form.querySelectorAll('input, select, textarea, label').forEach(el => {
+                        // Update input names and IDs
+                        if (el.name) {
+                            el.name = el.name.replace(/components-\d+-/, `components-${index}-`);
+                        }
+                        if (el.id) {
+                            el.id = el.id.replace(/components-\d+-/, `components-${index}-`);
+                        }
+                        // Update label for attributes
+                        if (el.htmlFor) {
+                            el.htmlFor = el.htmlFor.replace(/components-\d+-/, `components-${index}-`);
+                        }
+                    });
+                });
+                
+                // Update total forms count
+                totalForms.value = formCount;
+                formIdx = formCount;
+                
+                // Recalculate costs
+                calcMaterialCost();
+            } else {
+                alert('At least one component is required.');
+            }
+        }
+    });
+
+    // Live material-cost calculation
+    function calcMaterialCost() {
+        let totalCost = 0;
+        const forms = container.querySelectorAll('.component-form');
+        
+        forms.forEach((form) => {
+            // Find inputs by their name pattern
+            const quantityInput = form.querySelector('input[name*="-quantity"]');
+            const unitCostInput = form.querySelector('input[name*="-unit_cost"]');
+            const wasteInput = form.querySelector('input[name*="-waste_percentage"]');
+            
+            const quantity = parseFloat(quantityInput?.value) || 0;
+            const unitCost = parseFloat(unitCostInput?.value) || 0;
+            const waste = parseFloat(wasteInput?.value) || 0;
+            
+            const effectiveQuantity = quantity * (1 + waste / 100);
+            const componentCost = effectiveQuantity * unitCost;
+            totalCost += componentCost;
+        });
+        
+        document.getElementById('material-total').textContent = `ETB ${totalCost.toFixed(2)}`;
+    }
+
+    // Add event listeners for cost calculation to the entire container
+    container.addEventListener('input', (e) => {
+        const target = e.target;
+        if (target.name && (
+            target.name.includes('quantity') || 
+            target.name.includes('unit_cost') || 
+            target.name.includes('waste_percentage')
+        )) {
+            calcMaterialCost();
+        }
+    });
+
+    // Initial calculation
+    calcMaterialCost();
+});
+</script>
+{% endblock %}

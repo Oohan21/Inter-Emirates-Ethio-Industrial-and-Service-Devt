@@ -1,0 +1,416 @@
+{% extends 'base.html' %} {% load static %} {% block title %}{{ product.sku }} -
+Product Details - Inter Emirates ERP{% endblock %} {% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Product Details</h1>
+  <p class="text-gray-600 dark:text-gray-400">Complete information for {{ product.sku }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Product Images -->
+  <div class="lg:col-span-1">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Product Images</h3>
+      {% if product.images.exists %}
+      <!-- Main Image -->
+      {% with main_image=product.images.first %}
+      <div class="mb-4">
+        <img
+          src="{{ main_image.image.url }}"
+          alt="{{ product.name }}"
+          class="w-full h-64 object-cover rounded-lg shadow"
+        />
+        {% if main_image.is_main %}<span
+          class="absolute top-2 left-2 bg-yellow-400 text-xs text-white px-2 py-1 rounded"
+          >Main</span
+        >{% endif %}
+      </div>
+      {% endwith %}
+
+      <!-- Thumbnail Gallery -->
+      <div class="grid grid-cols-3 gap-2">
+        {% for img in product.images.all %}
+        <div
+          class="relative group cursor-pointer"
+          onclick="document.getElementById('main-img').src='{{ img.image.url }}'"
+        >
+          <img
+            src="{{ img.image.url }}"
+            alt="{{ product.name }}"
+            class="w-full h-20 object-cover rounded border-2 {% if img.is_main %}border-indigo-600{% else %}border-gray-300 dark:border-gray-600{% endif %} group-hover:border-indigo-400 transition"
+          />
+          {% if img.is_main %}
+          <span
+            class="absolute inset-0 flex items-center justify-center bg-indigo-600 bg-opacity-50 text-white text-xs rounded"
+            >Main</span
+          >
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-12">
+        <img
+          src="{% static 'img/default-product.png' %}"
+          alt="No image"
+          class="w-32 h-32 mx-auto mb-3 opacity-50"
+        />
+        <p class="text-gray-500 dark:text-gray-400 text-sm">No images uploaded</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Product Information -->
+  <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <div class="flex justify-between items-start mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">{{ product.name }}</h2>
+        <p class="text-gray-600 dark:text-gray-400">{{ product.sku }}</p>
+      </div>
+      <span
+        class="px-3 py-1 text-sm rounded-full {% if product.product_type == 'finished' %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 {% elif product.product_type == 'raw' %}bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 {% elif product.product_type == 'intermediate' %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300{% endif %}"
+      >
+        {{ product.get_product_type_display }}
+      </span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Basic Information -->
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+          Basic Information
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Category</label
+            >
+            <p class="mt-1 text-sm text-gray-900 dark:text-gray-300">
+              {{ product.category.name|default:"Uncategorized" }}
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Unit of Measure</label
+            >
+            <p class="mt-1 text-sm text-gray-900 dark:text-gray-300">
+              {{ product.unit_of_measure.name }} ({{ product.unit_of_measure.symbol }})
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Product Code</label
+            >
+            <p class="mt-1 text-sm text-gray-900 dark:text-gray-300">
+              {{ product.product_code|default:"—" }}
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Status</label
+            >
+            <p class="mt-1 text-sm text-gray-900 dark:text-gray-300">
+              <span
+                class="px-2 py-1 text-xs rounded-full {% if product.is_active %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300{% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300{% endif %}"
+              >
+                {{ product.is_active|yesno:"Active,Inactive" }}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing -->
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+          Pricing & Stock
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Cost Price</label
+            >
+            <p class="mt-1 text-sm font-bold text-gray-900 dark:text-white">
+              {{ product.cost_price|floatformat:2 }} ETB
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Selling Price</label
+            >
+            <p class="mt-1 text-sm font-bold text-green-600 dark:text-green-400">
+              {{ product.selling_price|floatformat:2 }} ETB
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Reorder Threshold</label
+            >
+            <p class="mt-1 text-sm text-gray-900 dark:text-gray-300">
+              {{ product.reorder_threshold|floatformat:2 }} {{ product.unit_of_measure.symbol }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description & Specs -->
+    {% if product.description or product.specifications %}
+    <div class="mt-6 border-t dark:border-gray-700 pt-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+        Description & Specifications
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% if product.description %}
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Description</label
+          >
+          <p class="mt-1 text-sm text-gray-900 dark:text-gray-300 whitespace-pre-line">
+            {{ product.description }}
+          </p>
+        </div>
+        {% endif %} {% if product.specifications %}
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Specifications</label
+          >
+          <p class="mt-1 text-sm text-gray-900 dark:text-gray-300 whitespace-pre-line">
+            {{ product.specifications }}
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+<div class="mt-8 flex justify-end space-x-4 items-center">
+    <a href="{% url 'product-edit' product.pk %}" class="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors h-10 flex items-center justify-center">
+        Edit Product
+    </a>
+    <a href="{% url 'product-delete' product.pk %}" 
+       class="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors h-10 flex items-center justify-center">
+        Delete Product
+    </a>
+    {% if product.is_active %}
+    <button
+        type="button"
+        onclick="if(confirm('Deactivate {{ product.sku }}? This will hide it from lists.')) { this.form.submit(); }"
+        class="px-4 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors h-10 flex items-center justify-center"
+    >
+        Deactivate Product
+    </button>
+    <form method="post" action="{% url 'product-deactivate' product.pk %}" class="hidden">
+        {% csrf_token %}
+    </form>
+    {% else %}
+    <span class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 text-sm rounded h-10 flex items-center justify-center">
+        Product Inactive
+    </span>
+    {% endif %}
+    <a href="{% url 'product-list' %}" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors h-10 flex items-center justify-center">
+        Back to List
+    </a>
+</div>
+</div>
+</div>
+    <!-- Specifications -->
+    {% if product.specifications %}
+    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Specifications</h3>
+      <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded">
+        <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+{{ product.specifications }}</pre
+        >
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Sidebar Information -->
+    <div class="space-y-6">
+      <!-- Stock Information -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+          Stock Information
+        </h3>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Total Quantity</span>
+            <span class="text-sm font-semibold dark:text-white"
+              >{{ total_stock }} {{ product.unit_of_measure.symbol }}</span
+            >
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Warehouses</span>
+            <span class="text-sm font-semibold dark:text-white">{{ warehouse_count }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Last Stock Update</span>
+            <span class="text-sm font-semibold dark:text-white"
+              >{{ last_stock_update|date:"M d, Y"|default:"Never" }}</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Production Stats -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+          Production Statistics
+        </h3>
+        <div class="space-y-3">
+          <div class="flex justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Work Orders</span>
+            <span class="text-sm font-semibold dark:text-white">{{ work_order_count }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Avg Yield</span>
+            <span class="text-sm font-semibold dark:text-white"
+              >{{ average_yield|floatformat:1 }}%</span
+            >
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Last Production</span>
+            <span class="text-sm font-semibold dark:text-white"
+              >{{ last_production|date:"M d, Y"|default:"Never" }}</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+        <div class="space-y-2">
+          <a
+            href="{% url 'work-order-update' product.pk %}"
+            class="w-full bg-blue-500 text-white py-2 px-3 rounded text-sm hover:bg-blue-600 inline-block text-center"
+          >
+            Create Work Order
+          </a>
+
+          <!-- 2. Stock Adjustment (Modal) -->
+          <a
+            href="{% url 'stock-adjustment-create'%}"
+            class="w-full bg-green-500 text-white py-2 px-3 rounded text-sm hover:bg-green-600 inline-block text-center"
+          >
+            Stock Adjustment
+          </a>
+
+          <!-- 3. View Transactions -->
+          <a
+            href="{% url 'product-transactions' product.pk %}"
+            target="_blank"
+            class="w-full bg-purple-500 text-white py-2 px-3 rounded text-sm hover:bg-purple-600 inline-block text-center"
+          >
+            View Transactions
+          </a>
+        </div>
+      </div>
+
+      <!-- Stock Adjustment Modal -->
+      <div
+        x-data
+        x-show="false"
+        x-transition
+        @open-modal.window="if($event.detail.id === 'stock-adjustment-modal') $el.style.display = 'flex'"
+        @close-modal.window="$el.style.display = 'none'"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center hidden"
+      >
+        <div
+          @click.away="$dispatch('close-modal')"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+        >
+          <h3 class="text-lg font-semibold mb-4 dark:text-white">
+            Adjust Stock: {{ product.sku }}
+          </h3>
+
+          <form method="post" action="{% url 'stock-adjustment-create' %}">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.pk }}" />
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Adjustment Type</label
+                >
+                <select
+                  name="transaction_type"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm"
+                >
+                  <option value="adjustment">Adjustment</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Quantity Change</label
+                >
+                <input
+                  type="number"
+                  step="0.01"
+                  name="quantity"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm"
+                  placeholder="e.g. +10 or -5"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Reference</label
+                >
+                <input
+                  type="text"
+                  name="reference"
+                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm"
+                  placeholder="e.g. Damaged, Found"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Notes</label
+                >
+                <textarea
+                  name="notes"
+                  rows="3"
+                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-2">
+              <button
+                type="button"
+                @click="$dispatch('close-modal')"
+                class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Save Adjustment
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Optional: Click thumbnail to change main image
+    document.querySelectorAll(".group").forEach((el) => {
+      el.addEventListener("click", () => {
+        const src = el.querySelector("img").src;
+        document.querySelector(".w-full.h-64").src = src;
+      });
+    });
+  </script>
+  {% endblock %}
+</div>

@@ -1,0 +1,55 @@
+<!-- Stock Adjustment Modal -->
+<div x-data x-show="false" x-transition
+     @open-modal.window="if($event.detail.id === 'stock-adjustment-modal') $el.style.display = 'flex'"
+     @close-modal.window="$el.style.display = 'none'"
+     class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 items-center justify-center hidden">
+    <div @click.away="$dispatch('close-modal')" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Adjust Stock: {{ product.sku }}</h3>
+
+        <form method="post" action="{% url 'stock-adjustment-create' %}">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.pk }}">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adjustment Type</label>
+                    <select name="transaction_type" required 
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="adjustment">Adjustment</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity Change</label>
+                    <input type="number" step="0.01" name="quantity" required
+                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                           placeholder="e.g. +10 or -5">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
+                    <input type="text" name="reference"
+                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                           placeholder="e.g. Damaged, Found">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                    <textarea name="notes" rows="3"
+                              class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-2">
+                <button type="button" @click="$dispatch('close-modal')"
+                        class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
+                    Save Adjustment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

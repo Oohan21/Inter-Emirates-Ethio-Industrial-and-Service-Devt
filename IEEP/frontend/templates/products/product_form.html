@@ -1,0 +1,645 @@
+{% extends 'base.html' %} {% load static %} {% block title %} 
+{% if form.instance.pk %}Edit Product{% else %}Add New Product
+{% endif %} - Inter Emirates ERP {% endblock %} {% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container { width: 100% !important; }
+    .select2-container--default .select2-selection--single,
+    .select2-container--default .select2-selection--multiple {
+        background-color: rgb(255 255 255);
+        border-color: rgb(209 213 219);
+        border-radius: 0.375rem;
+    }
+    .dark .select2-container--default .select2-selection--single,
+    .dark .select2-container--default .select2-selection--multiple {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+        color: rgb(243 244 246);
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: rgb(17 24 39);
+    }
+    .dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: rgb(243 244 246);
+    }
+    .select2-dropdown {
+        background-color: white;
+        border-color: rgb(209 213 219);
+    }
+    .dark .select2-dropdown {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+    }
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: rgb(243 244 246);
+    }
+    .dark .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: rgb(75 85 99);
+        color: rgb(243 244 246);
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: rgb(59 130 246);
+        color: white;
+    }
+    
+    .image-preview {
+        width: 128px;
+        height: 128px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        border-width: 2px;
+        border-color: rgb(209 213 219);
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+    .dark .image-preview {
+        border-color: rgb(75 85 99);
+    }
+    .main-badge {
+        position: absolute;
+        top: 0.25rem;
+        left: 0.25rem;
+        background-color: rgb(22 163 74);
+        color: white;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    #image-preview {
+        min-height: 150px;
+        border: 2px dashed #e5e7eb;
+        transition: all 0.3s ease;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+    .dark #image-preview {
+        border-color: #4b5563;
+        background-color: rgb(31 41 55);
+    }
+    #image-preview.border-blue-400 {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+    .dark #image-preview.border-blue-400 {
+        border-color: #3b82f6;
+        background-color: rgb(30 58 138);
+    }
+    .group:hover .image-preview {
+        border-color: #3b82f6;
+    }
+    
+    /* Form input styles for dark mode */
+    input, textarea, select {
+        background-color: white;
+        border-color: #d1d5db;
+        color: #111827;
+    }
+    .dark input, .dark textarea, .dark select {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f3f4f6;
+    }
+    input:focus, textarea:focus, select:focus {
+        border-color: #3b82f6;
+        ring-color: #3b82f6;
+    }
+    
+    /* Custom checkbox for dark mode */
+    input[type="checkbox"] {
+        background-color: white;
+        border-color: #d1d5db;
+    }
+    .dark input[type="checkbox"] {
+        background-color: #374151;
+        border-color: #6b7280;
+    }
+    input[type="checkbox"]:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %} {% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
+    {% if form.instance.pk %}Edit Product{% else %}Add New Product{% endif %}
+  </h1>
+  <p class="text-gray-600 dark:text-gray-400">Fill in the product details below</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-4xl border border-gray-200 dark:border-gray-700">
+  <form method="post" enctype="multipart/form-data" class="space-y-8">
+    {% csrf_token %}
+
+    <!-- === BASIC INFO === -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >SKU *</label
+        >
+        {{ form.sku }} 
+        {% if form.sku.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ form.sku.errors.0 }}</p>
+        {% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
+        {{ form.name }} 
+        {% if form.name.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ form.name.errors.0 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >Description</label
+      >
+      {{ form.description }} 
+      {% if form.description.errors %}
+      <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ form.description.errors.0 }}</p>
+      {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Product Type</label
+        >
+        {{ form.product_type }} 
+        {% if form.product_type.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+          {{ form.product_type.errors.0 }}
+        </p>
+        {% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Category</label
+        >
+        {{ form.category }} 
+        {% if form.category.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ form.category.errors.0 }}</p>
+        {% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Unit of Measure</label
+        >
+        {{ form.unit_of_measure }} 
+        {% if form.unit_of_measure.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+          {{ form.unit_of_measure.errors.0 }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- === PRICING === -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Cost Price</label
+        >
+        {{ form.cost_price }} 
+        {% if form.cost_price.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ form.cost_price.errors.0 }}</p>
+        {% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Selling Price</label
+        >
+        {{ form.selling_price }} 
+        {% if form.selling_price.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+          {{ form.selling_price.errors.0 }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- === ADDITIONAL INFO === -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Product Code</label
+        >
+        {{ form.product_code }} 
+        {% if form.product_code.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+          {{ form.product_code.errors.0 }}
+        </p>
+        {% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Specifications</label
+        >
+        {{ form.specifications }} 
+        {% if form.specifications.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+          {{ form.specifications.errors.0 }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-6">
+      <div>
+        <label class="flex items-center">
+          {{ form.is_active }}
+          <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Active</span>
+        </label>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Reorder Threshold</label
+        >
+        {{ form.reorder_threshold }} 
+        {% if form.reorder_threshold.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+          {{ form.reorder_threshold.errors.0 }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- === PRODUCT IMAGES === -->
+    <div class="border-t dark:border-gray-700 pt-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+        Product Images (Max 6)
+      </h3>
+
+      <!-- Upload New -->
+      <div class="mb-4">
+        <input
+          type="file"
+          name="new_images"
+          multiple
+          accept="image/*"
+          class="hidden"
+          id="new-images"
+        />
+        <label
+          for="new-images"
+          class="cursor-pointer inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded transition-colors duration-200"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+            />
+          </svg>
+          Upload Images
+        </label>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Max 6 images. First image will be set as main.
+        </p>
+      </div>
+
+      <!-- Preview Grid -->
+<div
+  id="image-preview"
+  class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
+>
+  {% if form.instance.pk %}
+    <!-- For existing products (update view) -->
+    {% for img in form.instance.images.all %}
+    <div class="relative group" data-id="{{ img.id }}">
+      <img
+        src="{{ img.image.url }}"
+        class="image-preview"
+        alt="Product Image"
+      />
+
+      <!-- Action Buttons -->
+      <div
+        class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100"
+      >
+        <div class="flex space-x-2">
+          <!-- Set as Main Button -->
+          <button
+            type="button"
+            onclick="setAsMain('{{ img.id }}')"
+            class="bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-500 text-white p-2 rounded-full transition-colors duration-200"
+            title="Set as Main Image"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </button>
+
+          <!-- Delete Image Button -->
+          <button
+            type="button"
+            onclick="removeImage('{{ img.id }}')"
+            class="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 text-white p-2 rounded-full transition-colors duration-200"
+            title="Delete Image"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      {% if img.is_main %}
+      <span class="main-badge">Main</span>
+      {% endif %}
+      <input type="hidden" name="existing_images" value="{{ img.id }}" />
+    </div>
+    {% endfor %}
+  {% else %}
+    <!-- For new products (create view) - Show empty state or upload prompt -->
+    <div class="col-span-full text-center py-8">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No images</h3>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Upload some images to get started.</p>
+    </div>
+  {% endif %}
+</div>
+    <div id="image-actions">
+  <!-- Hidden inputs for image management will be added here by JavaScript -->
+</div>
+    
+    <!-- Right side - Cancel and Save buttons -->
+    <div class="flex space-x-3">
+        <a href="{% url 'product-list' %}" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+            Cancel
+        </a>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded transition-colors duration-200">
+            {% if form.instance.pk %}Update Product{% else %}Create Product{% endif %}
+        </button>
+    </div>
+</div>
+  </form>
+</div>
+{% endblock %} 
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize Select2 with dark mode support
+    $('select').select2({
+        width: '100%',
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default'
+    });
+
+    // Update Select2 theme when dark mode changes
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'class') {
+                const isDark = document.documentElement.classList.contains('dark');
+                $('select').select2({
+                    theme: isDark ? 'dark' : 'default'
+                });
+            }
+        });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    const uploadInput = document.getElementById('new-images');
+    const preview = document.getElementById('image-preview');
+    const maxImages = 6;
+
+    // Upload new images
+    uploadInput.addEventListener('change', function (e) {
+        const files = Array.from(e.target.files);
+        const currentCount = preview.querySelectorAll('[data-id], .preview-new').length;
+        const allowed = files.slice(0, maxImages - currentCount);
+
+        allowed.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                const div = document.createElement('div');
+                div.className = 'relative group preview-new';
+                div.innerHTML = `
+                    <img src="${ev.target.result}" class="image-preview" alt="Preview">
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <button type="button" 
+                                onclick="removeNewImage(this)"
+                                class="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 text-white p-2 rounded-full transition-colors duration-200"
+                                title="Remove Image">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        if (files.length > allowed.length) {
+            alert(`Only ${maxImages} images allowed. Extra files ignored.`);
+        }
+    });
+
+    // Initialize drag and drop
+    initializeImageDragDrop();
+});
+
+// Set image as main
+function setAsMain(imageId) {
+    console.log('Setting image as main:', imageId);
+    
+    // Remove existing main badge from all images
+    document.querySelectorAll('.main-badge').forEach(badge => {
+        badge.remove();
+    });
+    
+    // Add main badge to selected image
+    const imageContainer = document.querySelector(`[data-id="${imageId}"]`);
+    if (imageContainer) {
+        const mainBadge = document.createElement('span');
+        mainBadge.className = 'main-badge';
+        mainBadge.textContent = 'Main';
+        imageContainer.appendChild(mainBadge);
+        
+        // Create or update hidden input for main image
+        let mainInput = document.querySelector('input[name="set_main_image"]');
+        if (!mainInput) {
+            mainInput = document.createElement('input');
+            mainInput.type = 'hidden';
+            mainInput.name = 'set_main_image';
+            document.querySelector('form').appendChild(mainInput);
+        }
+        mainInput.value = imageId;
+        
+        console.log('Main image set to:', imageId);
+        showFeedback('Main image updated!', 'success');
+    }
+}
+
+// Remove existing image
+function removeImage(imageId) {
+    console.log('Removing image:', imageId);
+    
+    if (!confirm('Are you sure you want to delete this image?')) {
+        return;
+    }
+    
+    const imageContainer = document.querySelector(`[data-id="${imageId}"]`);
+    
+    if (imageContainer) {
+        // Check if this is the main image
+        const isMain = imageContainer.querySelector('.main-badge');
+        
+        // Add to removed images list
+        let removedInput = document.querySelector(`input[name="remove_images"][value="${imageId}"]`);
+        if (!removedInput) {
+            removedInput = document.createElement('input');
+            removedInput.type = 'hidden';
+            removedInput.name = 'remove_images';
+            removedInput.value = imageId;
+            document.querySelector('form').appendChild(removedInput);
+        }
+        
+        // Remove from preview
+        imageContainer.remove();
+        
+        // If it was the main image, clear the main image input
+        if (isMain) {
+            const mainInput = document.querySelector('input[name="set_main_image"]');
+            if (mainInput) {
+                mainInput.remove();
+            }
+        }
+        
+        console.log('Image removed:', imageId);
+        showFeedback('Image removed!', 'success');
+    }
+}
+
+// Remove new image (not yet saved)
+function removeNewImage(button) {
+    console.log('Removing new image');
+    const imageContainer = button.closest('.preview-new');
+    if (imageContainer && confirm('Are you sure you want to remove this image?')) {
+        imageContainer.remove();
+        showFeedback('Image removed!', 'success');
+    }
+}
+
+// Show feedback message
+function showFeedback(message, type) {
+    console.log('Showing feedback:', message, type);
+    
+    // Remove existing feedback
+    const existingFeedback = document.getElementById('image-feedback');
+    if (existingFeedback) {
+        existingFeedback.remove();
+    }
+    
+    // Create new feedback
+    const feedback = document.createElement('div');
+    feedback.id = 'image-feedback';
+    feedback.className = `mt-2 p-3 rounded text-sm ${
+        type === 'success' ? 
+        'bg-green-100 text-green-800 border border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800' : 
+        'bg-red-100 text-red-800 border border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800'
+    }`;
+    feedback.textContent = message;
+    
+    // Insert after the upload section
+    const uploadSection = document.querySelector('.border-t.pt-6');
+    if (uploadSection) {
+        uploadSection.appendChild(feedback);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (feedback.parentElement) {
+                feedback.remove();
+            }
+        }, 3000);
+    }
+}
+
+// Enhanced image preview with drag and drop
+function initializeImageDragDrop() {
+    const dropArea = document.getElementById('image-preview');
+    if (!dropArea) return;
+    
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    // Highlight drop area when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    // Handle dropped files
+    dropArea.addEventListener('drop', handleDrop, false);
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function highlight() {
+        dropArea.classList.add('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900');
+    }
+    
+    function unhighlight() {
+        dropArea.classList.remove('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900');
+    }
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        // Create a new FileList (since we can't directly set files property)
+        const input = document.getElementById('new-images');
+        
+        // Create a DataTransfer to hold the files
+        const dataTransfer = new DataTransfer();
+        for (let file of files) {
+            dataTransfer.items.add(file);
+        }
+        input.files = dataTransfer.files;
+        
+        // Trigger change event
+        const event = new Event('change', { bubbles: true });
+        input.dispatchEvent(event);
+    }
+}
+</script>
+{% endblock %}

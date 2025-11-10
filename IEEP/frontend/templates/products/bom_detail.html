@@ -1,0 +1,392 @@
+{% extends 'base.html' %} {% block title %}{{ bom.bom_code }} - BOM Details -
+Inter Emirates ERP{% endblock %} {% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Bill of Materials Details</h1>
+  <p class="text-gray-600 dark:text-gray-400">Complete recipe for {{ bom.product.name }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- BOM Information -->
+  <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <div class="flex justify-between items-start mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+          {{ bom.product.name }}
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400">
+          {{ bom.bom_code }} - Version {{ bom.version }}
+        </p>
+      </div>
+      <div class="flex space-x-2">
+        <span
+          class="px-3 py-1 text-sm rounded-full {% if bom.is_active %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 {% elif bom.is_draft %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300{% endif %}"
+        >
+          {% if bom.is_active %}Active {% elif bom.is_draft %}Draft {% else %}Inactive{% endif %}
+        </span>
+        <span class="px-3 py-1 text-sm rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+          {{ bom.components.count }} Components
+        </span>
+      </div>
+    </div>
+
+    <!-- BOM Components -->
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Components</h3>
+      <div class="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+          <thead class="bg-gray-100 dark:bg-gray-600">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Component
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Quantity
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Unit Cost
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Total Cost
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Waste
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {% for component in bom.components.all %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ component.component.sku }}
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ component.component.name }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                {{ component.quantity }} {{ component.component.unit_of_measure.symbol }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                ETB {{ component.unit_cost|floatformat:2 }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                ETB {{ bom.total_cost|floatformat:2 }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                {{ component.waste_percentage }}%
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td
+                colspan="5"
+                class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+              >
+                No components added to this BOM
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="bg-gray-100 dark:bg-gray-600">
+            <tr>
+              <td
+                colspan="3"
+                class="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white text-right"
+              >
+                Total Material Cost:
+              </td>
+              <td class="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                ETB {{ bom.total_material_cost|floatformat:2 }}
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOM Instructions -->
+    {% if bom.instructions %}
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+        Production Instructions
+      </h3>
+      <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded">
+        <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+{{ bom.instructions }}</pre
+        >
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+  <div class="flex flex-wrap gap-2">
+    <!-- Edit BOM -->
+    <a href="{% url 'bom-edit' bom.pk %}"
+       class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm">
+      Edit BOM
+    </a>
+    <a href="{% url 'bom-delete' bom.pk %}"
+        class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
+        onclick="return confirm('Are you sure you want to delete {{ bom.bom_code }}?')">
+        Delete BOM
+    </a>   
+
+    <!-- Create New Version -->
+    <a href="{% url 'bom-new-version' bom.pk %}"
+       class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm">
+      Create New Version
+    </a>
+
+    <!-- Activate BOM -->
+    {% if bom.is_draft %}
+    <form method="post" action="{% url 'bom-activate' bom.pk %}" class="inline">
+      {% csrf_token %}
+      <button type="submit"
+              class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 text-sm">
+        Activate BOM
+      </button>
+    </form>
+    {% endif %}
+
+    <!-- Export BOM -->
+    <div x-data="{ open: false }">
+      <button @click="open = true"
+              class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm">
+        Export BOM
+      </button>
+      <div x-show="open" @click.away="open = false" class="absolute mt-2 bg-white dark:bg-gray-800 shadow-lg rounded border dark:border-gray-600">
+        <a href="{% url 'bom-export' bom.pk %}?format=xlsx" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white">Excel</a>
+        <a href="{% url 'bom-export' bom.pk %}?format=pdf" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white">PDF</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Sidebar Information -->
+  <div class="space-y-6">
+    <!-- Cost Breakdown -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Cost Breakdown</h3>
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Material Cost</span>
+          <span class="text-sm font-semibold dark:text-white"
+            >ETB {{ bom.total_material_cost|floatformat:2 }}</span
+          >
+        </div>
+        <div class="flex justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Labor Cost</span>
+          <span class="text-sm font-semibold dark:text-white"
+            >ETB {{ bom.labor_cost|floatformat:2 }}</span
+          >
+        </div>
+        <div class="flex justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Overhead Cost</span>
+          <span class="text-sm font-semibold dark:text-white"
+            >ETB {{ bom.overhead_cost|floatformat:2 }}</span
+          >
+        </div>
+        <div class="border-t dark:border-gray-700 pt-2">
+          <div class="flex justify-between font-semibold">
+            <span class="text-gray-800 dark:text-white">Total Cost</span>
+            <span class="text-blue-600 dark:text-blue-400"
+              >ETB {{ bom.total_cost|floatformat:2 }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+    <!-- BOM Information -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">BOM Information</h3>
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300">Effective Date</label>
+          <p class="text-gray-900 dark:text-white">
+            {{ bom.effective_date|date:"M d, Y"|default:"Not set" }}
+          </p>
+        </div>
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300">Created By</label>
+          <p class="text-gray-900 dark:text-white">
+            {{ bom.created_by.get_full_name|default:bom.created_by.username }}
+          </p>
+        </div>
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300">Last Updated</label>
+          <p class="text-gray-900 dark:text-white">{{ bom.updated_at|date:"M d, Y H:i" }}</p>
+        </div>
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300">Yield Percentage</label>
+          <p class="text-gray-900 dark:text-white">{{ bom.expected_yield_percentage }}%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+    <div class="space-y-2">
+
+        <!-- 1. Create Work Order -->
+        <a href="{% url 'work-order-create' %}"
+           class="w-full bg-blue-500 text-white py-2 px-3 rounded text-sm hover:bg-blue-600 inline-block text-center">
+            Create Work Order
+        </a>
+
+        <!-- 2. Generate Pick List -->
+        <a href="{% url 'bom-pick-list' bom.pk %}"
+           class="w-full bg-green-500 text-white py-2 px-3 rounded text-sm hover:bg-green-600 inline-block text-center">
+            Generate Pick List
+        </a>
+
+        <!-- 3. Cost Analysis (Modal) -->
+        <button @click="$dispatch('open-cost-modal', { id: {{ bom.pk }} })"
+            class="w-full bg-purple-500 text-white py-2 px-3 rounded text-sm hover:bg-purple-600">
+            Cost Analysis
+        </button>
+
+        <!-- 4. Compare Versions -->
+        <a href="{% url 'bom-compare' %}?product={{ bom.product.pk }}"
+           class="w-full bg-indigo-500 text-white py-2 px-3 rounded text-sm hover:bg-indigo-600 inline-block text-center">
+            Compare Versions
+        </a>
+    </div>
+</div>
+
+<!-- Cost Analysis Modal -->
+<div x-data="{ open: false, data: {} }" x-show="open" x-transition
+     @open-cost-modal.window="open = true; fetchCost($event.detail.id)"
+     class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center flex">
+    <div @click.away="open = false" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full p-6">
+        <h3 class="text-lg font-semibold mb-4 dark:text-white">Cost Analysis: {{ bom.bom_code }}</h3>
+
+        <div class="space-y-4">
+            <div class="flex justify-between">
+                <span class="text-sm font-medium dark:text-gray-300">Material Cost</span>
+                <span class="text-sm font-bold dark:text-white">ETB <span x-text="data.material.toFixed(2)"></span></span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm font-medium dark:text-gray-300">Labor Cost</span>
+                <span class="text-sm font-bold dark:text-white">ETB <span x-text="data.labor.toFixed(2)"></span></span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm font-medium dark:text-gray-300">Overhead Cost</span>
+                <span class="text-sm font-bold dark:text-white">ETB <span x-text="data.overhead.toFixed(2)"></span></span>
+            </div>
+            <div class="flex justify-between border-t dark:border-gray-700 pt-2">
+                <span class="text-sm font-medium dark:text-gray-300">Total Cost</span>
+                <span class="text-sm font-bold text-blue-600 dark:text-blue-400">ETB <span x-text="data.total.toFixed(2)"></span></span>
+            </div>
+
+            <!-- Components Table -->
+            <div class="mt-4">
+                <h4 class="text-sm font-semibold mb-2 dark:text-white">Component Breakdown</h4>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 dark:bg-gray-700">
+                            <th class="px-2 py-1 text-left dark:text-gray-300">SKU</th>
+                            <th class="px-2 py-1 text-left dark:text-gray-300">Name</th>
+                            <th class="px-2 py-1 text-right dark:text-gray-300">Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="comp in data.components">
+                            <tr class="border-t dark:border-gray-600">
+                                <td class="px-2 py-1 dark:text-gray-300" x-text="comp.sku"></td>
+                                <td class="px-2 py-1 dark:text-gray-300" x-text="comp.name"></td>
+                                <td class="px-2 py-1 text-right dark:text-gray-300" x-text="comp.cost.toFixed(2)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <button @click="open = false" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Usage History -->
+<div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+  <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Usage History</h3>
+  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+      <thead>
+        <tr>
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"
+          >
+            Work Order
+          </th>
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"
+          >
+            Date
+          </th>
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"
+          >
+            Quantity
+          </th>
+          <th
+            class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"
+          >
+            Actual Yield
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+        {% for usage in bom_usage %}
+        <tr>
+          <td class="px-4 py-2 text-sm dark:text-gray-300">{{ usage.work_order.order_number }}</td>
+          <td class="px-4 py-2 text-sm dark:text-gray-300">
+            {{ usage.work_order.created_at|date:"M d, Y" }}
+          </td>
+          <td class="px-4 py-2 text-sm dark:text-gray-300">{{ usage.quantity_produced }}</td>
+          <td class="px-4 py-2 text-sm dark:text-gray-300">
+            {{ usage.actual_yield_percentage|floatformat:1 }}%
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            No production history for this BOM
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function fetchCost(bomId) {
+    fetch(`/products/boms/${bomId}/cost-analysis/`)
+        .then(r => r.json())
+        .then(json => {
+            Alpine.store('cost', json.data);  // Use Alpine store or x-data
+        })
+        .catch(() => alert('Error loading cost data'));
+}
+</script>
+{% endblock %}
