@@ -269,6 +269,7 @@ class BOMCreateView(LoginRequiredMixin, CreateView):
                     self.request, f"BOM {self.object.bom_code} created (draft)."
                 )
             else:
+                # Add formset errors to messages
                 for error in components.errors:
                     messages.error(self.request, f"Component error: {error}")
                 return self.form_invalid(form)
@@ -289,6 +290,7 @@ class BOMActivateView(LoginRequiredMixin, View):
     def post(self, request, pk):
         bom = get_object_or_404(BOM, pk=pk)
 
+        # Deactivate any other active BOM for the same product
         BOM.objects.filter(product=bom.product, is_active=True).exclude(
             pk=bom.pk
         ).update(is_active=False, is_draft=True)
@@ -588,6 +590,7 @@ class BOMPickListView(DetailView):
         quantity = request.GET.get('quantity', '1')
         
         try:
+            # Convert to Decimal to avoid float precision issues
             production_qty = Decimal(quantity)
         except (ValueError, TypeError):
             production_qty = Decimal('1')
@@ -599,7 +602,7 @@ class BOMPickListView(DetailView):
         out_of_stock = 0
 
         for comp in bom.components.select_related('component').all():
-            required = comp.quantity * production_qty  
+            required = comp.quantity * production_qty  # Now Decimal * Decimal = OK
             available = sum(
                 item.quantity for item in 
                 comp.component.stock_items.filter(warehouse__is_active=True)
@@ -662,6 +665,10 @@ class BOMCostAnalysisView(DetailView):
             }
         })
 
+
+# ------------------------------------------------------------------
+# 3. Compare Versions (List of BOMs for same product)
+# ------------------------------------------------------------------
 class BOMCompareView(ListView):
     model = BOM
     template_name = 'products/bom_compare.html'
