@@ -1,0 +1,159 @@
+<!-- notifications/templates/notifications/notification_preferences.html -->
+{% extends 'base.html' %}
+
+{% block title %}Notification Preferences - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Notification Preferences</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">
+                Manage how you receive notifications from the system
+            </p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="space-y-6">
+                    <!-- Email Notifications -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Email Notifications</h3>
+                        
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Email Notifications</label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Receive notifications via email</p>
+                            </div>
+                            {{ form.email_notifications }}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.email_frequency.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Email Frequency
+                            </label>
+                            {{ form.email_frequency }}
+                            {% if form.email_frequency.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.email_frequency.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Alert Types -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Alert Types</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Low Stock Alerts</label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">When inventory items are low</p>
+                                </div>
+                                {{ form.low_stock_alerts }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Maintenance Alerts</label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Equipment maintenance alerts</p>
+                                </div>
+                                {{ form.maintenance_alerts }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Work Order Alerts</label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Production work order updates</p>
+                                </div>
+                                {{ form.work_order_alerts }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">QC Alerts</label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Quality control notifications</p>
+                                </div>
+                                {{ form.qc_alerts }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">System Alerts</label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">General system notifications</p>
+                                </div>
+                                {{ form.system_alerts }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- In-App Notifications -->
+                    <div class="pb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">In-App Notifications</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">In-App Notifications</label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Show notifications within the application</p>
+                                </div>
+                                {{ form.in_app_notifications }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Desktop Notifications</label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Show browser desktop notifications</p>
+                                </div>
+                                {{ form.desktop_notifications }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end space-x-4">
+                    <a href="{% url 'notification-list' %}" 
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md">
+                        Save Preferences
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="checkbox"] {
+        @apply rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700;
+        transform: scale(1.2);
+    }
+    select {
+        @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle email frequency based on email notifications
+    const emailNotifications = document.getElementById('{{ form.email_notifications.id_for_label }}');
+    const emailFrequency = document.getElementById('{{ form.email_frequency.id_for_label }}');
+    
+    function toggleEmailFrequency() {
+        emailFrequency.disabled = !emailNotifications.checked;
+    }
+    
+    emailNotifications.addEventListener('change', toggleEmailFrequency);
+    toggleEmailFrequency(); // Initial state
+});
+</script>
+{% endblock %}

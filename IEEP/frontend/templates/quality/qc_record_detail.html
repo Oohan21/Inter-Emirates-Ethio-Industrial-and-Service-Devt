@@ -1,0 +1,131 @@
+<!-- templates/quality/qc_record_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}QC Record {{ qc_record.record_number }} - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-pending { background-color: #fef3c7; color: #b45309; }
+        .status-in_progress { background-color: #dbeafe; color: #1e40af; }
+        .status-passed { background-color: #d1fae5; color: #047857; }
+        .status-failed { background-color: #fee2e2; color: #b91c1c; }
+        .status-rework { background-color: #e5e7eb; color: #4b5563; }
+        .result-pass { background-color: #d1fae5; color: #047857; }
+        .result-fail { background-color: #fee2e2; color: #b91c1c; }
+        .section-card { border-left: 4px solid #3b82f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-pending { background-color: #78350f; color: #fcd34d; }
+        .dark .status-in_progress { background-color: #1e3a8a; color: #93c5fd; }
+        .dark .status-passed { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-failed { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .status-rework { background-color: #374151; color: #d1d5db; }
+        .dark .result-pass { background-color: #064e3b; color: #6ee7b7; }
+        .dark .result-fail { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .section-card { border-left-color: #60a5fa; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">QC Record: {{ qc_record.record_number }}</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Record Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Product:</strong> {{ qc_record.product.sku }} - {{ qc_record.product.name }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Batch Number:</strong> {{ qc_record.batch_number }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Status:</strong> <span class="px-2 py-1 rounded status-{{ qc_record.status }}">{{ qc_record.get_status_display }}</span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Checklist:</strong> {{ qc_record.checklist.name }}</p>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Quantity Tested:</strong> {{ qc_record.quantity_tested }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Quantity Passed:</strong> {{ qc_record.quantity_passed|default:'N/A' }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Quantity Failed:</strong> {{ qc_record.quantity_failed|default:'N/A' }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Tested By:</strong> {{ qc_record.tested_by.username|default:'N/A' }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Tested At:</strong> {{ qc_record.tested_at|date:"Y-m-d H:i"|default:'N/A' }}</p>
+                </div>
+            </div>
+            {% if qc_record.notes %}
+                <p class="mt-4 text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Notes:</strong> {{ qc_record.notes }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Test Results -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6 section-card">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Test Results</h2>
+            {% if qc_record.test_results.all %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Parameter</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Specification</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Actual Value</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Result</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in qc_record.test_results.all %}
+                                <tr class="border-b dark:border-gray-600 result-{% if result.is_pass %}pass{% else %}fail{% endif %}">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ result.checklist_item.parameter }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ result.checklist_item.specification }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ result.actual_value|default:result.text_value|default:'N/A' }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ result.is_pass|yesno:"Pass,Fail,N/A" }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ result.notes|default:'N/A' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No test results available.</p>
+            {% endif %}
+        </div>
+
+        <!-- Attachments -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6 section-card">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Attachments</h2>
+            {% if qc_record.attachments.all %}
+                <ul class="list-disc pl-5">
+                    {% for attachment in qc_record.attachments.all %}
+                        <li class="mb-2 text-gray-700 dark:text-gray-300">
+                            <a href="{{ attachment.file.url }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">
+                                {{ attachment.description|default:'Attachment' }}
+                            </a>
+                            <span class="text-gray-600 dark:text-gray-400 text-sm">(Uploaded by {{ attachment.uploaded_by.username|default:'N/A' }} at {{ attachment.uploaded_at|date:"Y-m-d H:i" }})</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No attachments available.</p>
+            {% endif %}
+        </div>
+
+        <!-- Certificate -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md section-card">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Certificate</h2>
+            {% if qc_record.qccertificate %}
+                <div class="space-y-2">
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Certificate Number:</strong> {{ qc_record.qccertificate.certificate_number }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Issued By:</strong> {{ qc_record.qccertificate.issued_by.username }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Issued Date:</strong> {{ qc_record.qccertificate.issued_date|date:"Y-m-d H:i" }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Valid Until:</strong> {{ qc_record.qccertificate.valid_until|date:"Y-m-d"|default:'N/A' }}</p>
+                    {% if qc_record.qccertificate.certificate_file %}
+                        <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">File:</strong> <a href="{{ qc_record.qccertificate.certificate_file.url }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" target="_blank">Download Certificate</a></p>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No certificate issued.</p>
+            {% endif %}
+        </div>
+
+        <div class="mt-6">
+            <a href="{% url 'qc-record-list' %}" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                Back to List
+            </a>
+        </div>
+    </div>
+{% endblock %}

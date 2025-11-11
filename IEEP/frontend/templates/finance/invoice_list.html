@@ -1,0 +1,88 @@
+<!-- templates/finance/invoice_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Invoices - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-draft { background-color: #e5e7eb; color: #4b5563; }
+        .status-sent { background-color: #dbeafe; color: #1e40af; }
+        .status-paid { background-color: #d1fae5; color: #047857; }
+        .status-overdue { background-color: #fee2e2; color: #b91c1c; }
+        .status-cancelled { background-color: #f3e8ff; color: #6d28d9; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-draft { background-color: #374151; color: #d1d5db; }
+        .dark .status-sent { background-color: #1e3a8a; color: #93c5fd; }
+        .dark .status-paid { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-overdue { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .status-cancelled { background-color: #4c1d95; color: #c4b5fd; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Invoices</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by invoice number or supplier">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status" id="status"
+                            class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Statuses</option>
+                        {% for value, label in invoices.model.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Invoices Table -->
+            {% if invoices %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Invoice Number</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Supplier</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Invoice Date</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Due Date</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Total Amount</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                                <tr class="border-b dark:border-gray-600 table-row status-{{ invoice.status }}">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ invoice.invoice_number }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ invoice.supplier }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ invoice.invoice_date|date:"Y-m-d" }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ invoice.due_date|date:"Y-m-d" }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ invoice.total_amount }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ invoice.get_status_display }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No invoices found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

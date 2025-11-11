@@ -1,0 +1,70 @@
+<!-- templates/quality/failed_qc_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Failed Quality Control Records - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-failed { background-color: #fee2e2; color: #b91c1c; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-failed { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Failed Quality Control Records</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by record number, batch number, or product SKU">
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Failed Records Table -->
+            {% if failed_records %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Record Number</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Product</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Batch Number</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Tested By</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Tested At</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in failed_records %}
+                                <tr class="border-b dark:border-gray-600 table-row status-failed">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.record_number }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.product.sku }} - {{ record.product.name }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.batch_number }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.tested_by.username|default:'N/A' }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.tested_at|date:"Y-m-d H:i"|default:'N/A' }}</td>
+                                    <td class="p-3">
+                                        <a href="{% url 'qc-record-detail' record.pk %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No failed quality control records found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

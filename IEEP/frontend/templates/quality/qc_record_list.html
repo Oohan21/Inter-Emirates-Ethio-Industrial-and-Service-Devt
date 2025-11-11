@@ -1,0 +1,92 @@
+<!-- templates/quality/qc_record_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Quality Control Records - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-pending { background-color: #fef3c7; color: #b45309; }
+        .status-in_progress { background-color: #dbeafe; color: #1e40af; }
+        .status-passed { background-color: #d1fae5; color: #047857; }
+        .status-failed { background-color: #fee2e2; color: #b91c1c; }
+        .status-rework { background-color: #e5e7eb; color: #4b5563; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-pending { background-color: #78350f; color: #fcd34d; }
+        .dark .status-in_progress { background-color: #1e3a8a; color: #93c5fd; }
+        .dark .status-passed { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-failed { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .status-rework { background-color: #374151; color: #d1d5db; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Quality Control Records</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by record number, batch number, or product SKU">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status" id="status"
+                            class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Statuses</option>
+                        {% for value, label in qc_records.model.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Filter
+                </button>
+            </form>
+
+            <!-- QC Records Table -->
+            {% if qc_records %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Record Number</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Product</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Batch Number</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Tested By</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Tested At</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in qc_records %}
+                                <tr class="border-b dark:border-gray-600 table-row status-{{ record.status }}">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.record_number }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.product.sku }} - {{ record.product.name }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.batch_number }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.get_status_display }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.tested_by.username|default:'N/A' }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ record.tested_at|date:"Y-m-d H:i"|default:'N/A' }}</td>
+                                    <td class="p-3">
+                                        <a href="{% url 'qc-record-detail' record.pk %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No quality control records found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

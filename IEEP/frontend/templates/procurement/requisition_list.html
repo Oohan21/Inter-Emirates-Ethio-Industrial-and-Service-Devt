@@ -1,0 +1,88 @@
+<!-- templates/procurement/requisition_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Purchase Requisitions - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-draft { background-color: #e5e7eb; color: #4b5563; }
+        .status-submitted { background-color: #fef3c7; color: #b45309; }
+        .status-approved { background-color: #d1fae5; color: #047857; }
+        .status-rejected { background-color: #fee2e2; color: #b91c1c; }
+        .status-ordered { background-color: #dbeafe; color: #1e40af; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-draft { background-color: #374151; color: #d1d5db; }
+        .dark .status-submitted { background-color: #78350f; color: #fcd34d; }
+        .dark .status-approved { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-rejected { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .status-ordered { background-color: #1e3a8a; color: #93c5fd; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Purchase Requisitions</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by requisition number">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status" id="status"
+                            class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Statuses</option>
+                        {% for value, label in requisitions.model.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Requisitions Table -->
+            {% if requisitions %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Requisition Number</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Requested By</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Department</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Total Estimated Cost</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for requisition in requisitions %}
+                                <tr class="border-b dark:border-gray-600 table-row status-{{ requisition.status }}">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ requisition.requisition_number }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ requisition.requested_by.username }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ requisition.department }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ requisition.get_status_display }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ requisition.total_estimated_cost }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ requisition.created_at|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No requisitions found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

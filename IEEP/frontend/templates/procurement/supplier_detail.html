@@ -1,0 +1,82 @@
+<!-- templates/procurement/supplier_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Supplier {{ supplier.code }} - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ supplier.name }}</h1>
+                <p class="text-gray-600 dark:text-gray-400">Code: {{ supplier.code }}</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-sm font-medium {% if supplier.is_active %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                {{ supplier.is_active|yesno:"Active,Inactive" }}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Supplier Type</p>
+                    <p class="text-gray-900 dark:text-white">{{ supplier.get_supplier_type_display }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Contact Person</p>
+                    <p class="text-gray-900 dark:text-white">{{ supplier.contact_person|default:"N/A" }}</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                    <p class="text-gray-900 dark:text-white">{{ supplier.email|default:"N/A" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+                    <p class="text-gray-900 dark:text-white">{{ supplier.phone|default:"N/A" }}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if supplier.address %}
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Address</h3>
+            <p class="text-gray-900 dark:text-white">{{ supplier.address }}</p>
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Business Information</h3>
+                <div class="space-y-2">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Tax ID</p>
+                        <p class="text-gray-900 dark:text-white">{{ supplier.tax_id|default:"N/A" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Payment Terms</p>
+                        <p class="text-gray-900 dark:text-white">{{ supplier.payment_terms|default:"N/A" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Lead Time</p>
+                        <p class="text-gray-900 dark:text-white">{{ supplier.lead_time_days }} days</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-4 mt-6">
+            <a href="{% url 'supplier-list' %}" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                Back to List
+            </a>
+            <a href="{% url 'supplier-edit' supplier.pk %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                Edit Supplier
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

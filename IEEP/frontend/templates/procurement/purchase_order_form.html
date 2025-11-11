@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load maintenance_tags %}
+
+{% block title %}{{ title }} - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .form-field { margin-bottom: 1rem; }
+        .form-field label { display: block; font-weight: 600; color: #374151; }
+        .form-field input, .form-field select, .form-field textarea {
+            width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .form-field .errorlist { color: #b91c1c; font-size: 0.875rem; margin-top: 0.25rem; }
+        .formset-row { border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; }
+        .table-row:hover { background-color: #f3f4f6; }
+        .add-row-btn { background-color: #10B981; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; }
+        .add-row-btn:hover { background-color: #059669; }
+        .delete-row-btn { color: #b91c1c; font-size: 0.875rem; }
+        .delete-row-btn:hover { color: #991b1b; }
+        
+        /* Dark mode overrides */
+        .dark .form-field label { color: #e5e7eb; }
+        .dark .form-field input, 
+        .dark .form-field select, 
+        .dark .form-field textarea {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+        .dark .form-field input:focus, 
+        .dark .form-field select:focus, 
+        .dark .form-field textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .dark .formset-row { border-bottom-color: #4b5563; }
+        .dark .table-row:hover { background-color: #374151; }
+        .dark .add-row-btn:hover { background-color: #047857; }
+        .dark .delete-row-btn { color: #fca5a5; }
+        .dark .delete-row-btn:hover { color: #f87171; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ title }}</h1>
+
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <form method="post" id="purchase-order-form">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="form-field">
+                    <label for="id_supplier">Supplier</label>
+                    {{ form.supplier }}
+                    {{ form.supplier.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="id_order_date">Order Date</label>
+                    {{ form.order_date }}
+                    {{ form.order_date.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="id_expected_delivery_date">Expected Delivery Date</label>
+                    {{ form.expected_delivery_date }}
+                    {{ form.expected_delivery_date.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="id_terms_and_conditions">Terms and Conditions</label>
+                    {{ form.terms_and_conditions }}
+                    {{ form.terms_and_conditions.errors }}
+                </div>
+            </div>
+
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Order Items</h2>
+            {{ formset.management_form }}
+            <div id="formset-container" class="mb-6">
+                {% for form in formset %}
+                    <div class="formset-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div class="form-field">
+                            <label>Product</label>
+                            {{ form.product }}
+                            {{ form.product.errors }}
+                        </div>
+                        <div class="form-field">
+                            <label>Quantity</label>
+                            {{ form.quantity }}
+                            {{ form.quantity.errors }}
+                        </div>
+                        <div class="form-field">
+                            <label>Unit Price</label>
+                            {{ form.unit_price }}
+                            {{ form.unit_price.errors }}
+                        </div>
+                        <div class="form-field flex items-end">
+                            {% if formset.can_delete and form.instance.pk %}
+                                {{ form.DELETE }}
+                                <button type="button" class="delete-row-btn">Remove</button>
+                            {% elif forloop.counter0 > 0 %}
+                                {{ form.DELETE }}
+                                <button type="button" class="delete-row-btn">Remove</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-row-btn" class="add-row-btn mb-6">Add Item</button>
+
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'purchase-order-list' %}" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Create Purchase Order
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const formsetContainer = document.getElementById('formset-container');
+            const addRowBtn = document.getElementById('add-row-btn');
+            const totalFormsInput = document.querySelector('#id_form-TOTAL_FORMS');
+
+            // Clone the first formset row for adding new rows
+            const firstFormRow = formsetContainer.querySelector('.formset-row').cloneNode(true);
+            firstFormRow.querySelectorAll('input, select').forEach(input => {
+                input.value = '';
+                input.checked = false;
+            });
+
+            // Add new formset row
+            addRowBtn.addEventListener('click', function() {
+                const totalForms = parseInt(totalFormsInput.value);
+                const newFormRow = firstFormRow.cloneNode(true);
+                
+                // Update form index in input names
+                newFormRow.querySelectorAll('[name]').forEach(input => {
+                    input.name = input.name.replace('form-0-', `form-${totalForms}-`);
+                    input.id = input.id.replace('id_form-0-', `id_form-${totalForms}-`);
+                });
+
+                // Add delete button for new rows
+                const deleteBtn = newFormRow.querySelector('.delete-row-btn') || document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'delete-row-btn';
+                deleteBtn.textContent = 'Remove';
+                deleteBtn.addEventListener('click', function() {
+                    newFormRow.querySelector('[name$="-DELETE"]').checked = true;
+                    newFormRow.style.display = 'none';
+                });
+                newFormRow.querySelector('.form-field:last-child').appendChild(deleteBtn);
+
+                formsetContainer.appendChild(newFormRow);
+                totalFormsInput.value = totalForms + 1;
+            });
+
+            // Handle existing delete buttons
+            formsetContainer.querySelectorAll('.delete-row-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const row = btn.closest('.formset-row');
+                    row.querySelector('[name$="-DELETE"]').checked = true;
+                    row.style.display = 'none';
+                });
+            });
+
+            // AJAX form submission
+            document.getElementById('purchase-order-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                fetch(this.action, {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Toastify({
+                            text: 'Purchase Order created successfully.',
+                            duration: 3000,
+                            gravity: 'top',
+                            position: 'right',
+                            backgroundColor: '#10B981',
+                        }).showToast();
+                        setTimeout(() => window.location.href = data.redirect_url, 1000);
+                    } else {
+                        Toastify({
+                            text: 'Error: ' + JSON.stringify(data.errors),
+                            duration: 5000,
+                            gravity: 'top',
+                            position: 'right',
+                            backgroundColor: '#EF4444',
+                        }).showToast();
+                    }
+                })
+                .catch(error => {
+                    Toastify({
+                        text: 'Error submitting form: ' + error,
+                        duration: 5000,
+                        gravity: 'top',
+                        position: 'right',
+                        backgroundColor: '#EF4444',
+                    }).showToast();
+                });
+            });
+        });
+    </script>
+{% endblock %}

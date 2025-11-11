@@ -1,0 +1,70 @@
+<!-- templates/procurement/goods_receipt_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Goods Receipt {{ goods_receipt.gr_number }} - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Goods Receipt: {{ goods_receipt.gr_number }}</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="space-y-2">
+                <p><strong class="text-gray-900 dark:text-white">GR Number:</strong> {{ goods_receipt.gr_number }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Purchase Order:</strong> {{ goods_receipt.purchase_order.po_number }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Supplier:</strong> {{ goods_receipt.purchase_order.supplier.name }}</p>
+            </div>
+            <div class="space-y-2">
+                <p><strong class="text-gray-900 dark:text-white">Received By:</strong> {{ goods_receipt.received_by.username }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Receipt Date:</strong> {{ goods_receipt.receipt_date|date:"Y-m-d H:i" }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Created At:</strong> {{ goods_receipt.created_at|date:"Y-m-d H:i" }}</p>
+            </div>
+        </div>
+
+        {% if goods_receipt.notes %}
+        <div class="mb-6">
+            <strong class="text-gray-900 dark:text-white">Notes:</strong>
+            <p class="text-gray-900 dark:text-white mt-1">{{ goods_receipt.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if goods_receipt.items.all %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Received Items</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 dark:bg-gray-700">
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Product</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Received Quantity</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Batch Number</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Lot Number</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Expiry Date</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Unit Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in goods_receipt.items.all %}
+                    <tr class="border-b dark:border-gray-600">
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.po_item.product.sku }} - {{ item.po_item.product.name }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.received_quantity }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.batch_number }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.lot_number|default:"N/A" }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.expiry_date|date:"Y-m-d"|default:"N/A" }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.unit_cost }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-6">
+        <a href="{% url 'goods-receipt-list' %}" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+            Back to List
+        </a>
+    </div>
+</div>
+{% endblock %}

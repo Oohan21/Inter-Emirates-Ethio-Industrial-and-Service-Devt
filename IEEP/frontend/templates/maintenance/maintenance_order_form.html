@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Update{% else %}Create{% endif %} Maintenance Order - Inter Emirates ERP
+{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .form-error { color: #b91c1c; font-size: 0.875rem; }
+        .form-field { margin-bottom: 1.5rem; }
+        .form-label { font-weight: 600; color: #374151; }
+        .form-input { border-color: #d1d5db; }
+        .form-input:focus { border-color: #3b82f6; }
+        
+        /* Dark mode styles */
+        .dark .form-label { color: #d1d5db; }
+        .dark .form-input { 
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+        .dark .form-input:focus { 
+            border-color: #3b82f6;
+            ring-color: #3b82f6;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-3xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            {% if form.instance.pk %}Update{% else %}Create{% endif %} Maintenance Order
+        </h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Asset -->  <!-- Fixed: changed from Machine to Asset -->
+                <div class="form-field">
+                    <label for="{{ form.asset.id_for_label }}" class="form-label block mb-2">Asset</label>  <!-- Fixed: form.asset -->
+                    <select name="{{ form.asset.name }}" id="{{ form.asset.id_for_label }}"
+                            class="form-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select an asset</option>
+                        {% for asset in form.asset.field.queryset %}  <!-- Fixed: form.asset -->
+                            <option value="{{ asset.pk }}"
+                                    {% if form.instance.asset.pk == asset.pk %}selected{% endif %}>  <!-- Fixed: form.instance.asset -->
+                                {{ asset.asset_code }} - {{ asset.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.asset.errors %}  <!-- Fixed: form.asset -->
+                        <p class="form-error mt-1">{{ form.asset.errors.as_text }}</p>  <!-- Fixed: form.asset -->
+                    {% endif %}
+                </div>
+
+                <!-- Priority -->
+                <div class="form-field">
+                    <label for="{{ form.priority.id_for_label }}" class="form-label block mb-2">Priority</label>
+                    <select name="{{ form.priority.name }}" id="{{ form.priority.id_for_label }}"
+                            class="form-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {% for value, label in form.priority.field.choices %}
+                            <option value="{{ value }}"
+                                    {% if form.priority.value == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.priority.errors %}
+                        <p class="form-error mt-1">{{ form.priority.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Maintenance Type -->
+                <div class="form-field">
+                    <label for="{{ form.maintenance_type.id_for_label }}" class="form-label block mb-2">Maintenance Type</label>
+                    <select name="{{ form.maintenance_type.name }}" id="{{ form.maintenance_type.id_for_label }}"  <!-- Fixed: changed to select -->
+                            class="form-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {% for value, label in form.maintenance_type.field.choices %}
+                            <option value="{{ value }}"
+                                    {% if form.maintenance_type.value == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.maintenance_type.errors %}
+                        <p class="form-error mt-1">{{ form.maintenance_type.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div class="form-field">
+                    <label for="{{ form.description.id_for_label }}" class="form-label block mb-2">Description</label>
+                    <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}"
+                              class="form-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              rows="5">{{ form.description.value|default_if_none:'' }}</textarea>
+                    {% if form.description.errors %}
+                        <p class="form-error mt-1">{{ form.description.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Scheduled Date -->
+                <div class="form-field">
+                    <label for="{{ form.scheduled_date.id_for_label }}" class="form-label block mb-2">Scheduled Date</label>
+                    <input type="date" name="{{ form.scheduled_date.name }}" id="{{ form.scheduled_date.id_for_label }}"
+                           value="{{ form.scheduled_date.value|date:'Y-m-d'|default_if_none:'' }}"
+                           class="form-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {% if form.scheduled_date.errors %}
+                        <p class="form-error mt-1">{{ form.scheduled_date.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Assigned To (Available for both create and update) -->  <!-- Fixed: removed update-only restriction -->
+                <div class="form-field">
+                    <label for="{{ form.assigned_to.id_for_label }}" class="form-label block mb-2">Assigned To</label>
+                    <select name="{{ form.assigned_to.name }}" id="{{ form.assigned_to.id_for_label }}"
+                            class="form-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select a user (optional)</option>
+                        {% for user in form.assigned_to.field.queryset %}
+                            <option value="{{ user.pk }}"
+                                    {% if form.instance.assigned_to.pk == user.pk %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.assigned_to.errors %}
+                        <p class="form-error mt-1">{{ form.assigned_to.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Status (Update Only) -->
+                {% if form.instance.pk %}
+                    <div class="form-field">
+                        <label for="{{ form.status.id_for_label }}" class="form-label block mb-2">Status</label>
+                        <select name="{{ form.status.name }}" id="{{ form.status.id_for_label }}"
+                                class="form-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            {% for value, label in form.status.field.choices %}
+                                <option value="{{ value }}"
+                                        {% if form.status.value == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.status.errors %}
+                            <p class="form-error mt-1">{{ form.status.errors.as_text }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Form Actions -->
+                <div class="flex justify-end space-x-4">
+                    <a href="{% url 'maintenance-order-list' %}" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">  <!-- Fixed: added namespace -->
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
+                        {% if form.instance.pk %}Update{% else %}Create{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

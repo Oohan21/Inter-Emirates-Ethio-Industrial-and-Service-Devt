@@ -1,0 +1,88 @@
+<!-- notifications/templates/notifications/message_reply.html -->
+{% extends 'base.html' %}
+
+{% block title %}Reply to: {{ parent_message.subject }} - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Reply to Message</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">
+                Replying to: <strong>{{ parent_message.subject }}</strong>
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Original Message -->
+            <div class="lg:col-span-1">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Original Message</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">From</span>
+                            <p class="text-sm text-gray-800 dark:text-white">{{ parent_message.sender.username }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Subject</span>
+                            <p class="text-sm text-gray-800 dark:text-white">{{ parent_message.subject }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Sent</span>
+                            <p class="text-sm text-gray-800 dark:text-white">{{ parent_message.created_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <p class="text-sm text-gray-700 dark:text-gray-300">{{ parent_message.message|truncatewords:50 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reply Form -->
+            <div class="lg:col-span-2">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="{{ form.message.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Your Reply *
+                                </label>
+                                {{ form.message }}
+                                {% if form.message.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.message.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex justify-end space-x-4">
+                            <a href="{% url 'message-detail' parent_message.pk %}" 
+                               class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                Cancel
+                            </a>
+                            <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md">
+                                Send Reply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    textarea {
+        @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white;
+        min-height: 200px;
+        resize: vertical;
+    }
+</style>
+{% endblock %}

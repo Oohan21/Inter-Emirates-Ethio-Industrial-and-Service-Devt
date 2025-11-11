@@ -1,0 +1,81 @@
+<!-- notifications/templates/notifications/email/ticket_digest.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #3b82f6; color: white; padding: 20px; text-align: center; }
+        .content { background: #f9fafb; padding: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #3b82f6; }
+        .ticket-list { margin: 20px 0; }
+        .ticket-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #e5e7eb; }
+        .urgent { border-left-color: #ef4444; }
+        .high { border-left-color: #f59e0b; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Daily Ticket Digest</h1>
+            <p>{{ department.name }} - {{ now|date:"F d, Y" }}</p>
+        </div>
+        
+        <div class="content">
+            <h2>Ticket Overview</h2>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>{{ total_tickets }}</h3>
+                    <p>Total Tickets</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ open_tickets }}</h3>
+                    <p>Open Tickets</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ overdue_tickets }}</h3>
+                    <p>Overdue Tickets</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ tickets|length }}</h3>
+                    <p>Active Tickets</p>
+                </div>
+            </div>
+
+            {% if tickets %}
+            <div class="ticket-list">
+                <h3>Recent Active Tickets</h3>
+                {% for ticket in tickets %}
+                <div class="ticket-item {% if ticket.priority == 'urgent' %}urgent{% elif ticket.priority == 'high' %}high{% endif %}">
+                    <h4>{{ ticket.ticket_number }} - {{ ticket.title }}</h4>
+                    <p><strong>Status:</strong> {{ ticket.get_status_display }} | 
+                       <strong>Priority:</strong> {{ ticket.get_priority_display }} |
+                       <strong>Age:</strong> {{ ticket.age_in_days }} days</p>
+                    <p><strong>Assigned to:</strong> {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Unassigned{% endif %}</p>
+                    {% if ticket.due_date %}
+                    <p><strong>Due:</strong> {{ ticket.due_date|date:"M d, Y" }}{% if ticket.is_overdue %} (OVERDUE){% endif %}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <p>
+                <a href="{{ site_url }}{% url 'ticket-list' %}?assigned_department={{ department.id }}" 
+                   style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                    View All Tickets
+                </a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from Inter Emirates ERP System.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

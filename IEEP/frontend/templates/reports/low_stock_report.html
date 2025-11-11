@@ -5,28 +5,28 @@
 <div class="max-w-7xl mx-auto p-6">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Low Stock Report</h1>
-            <p class="text-gray-600">Products below reorder level requiring restock</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Low Stock Report</h1>
+            <p class="text-gray-600 dark:text-gray-400">Products below reorder level requiring restock</p>
         </div>
         <div class="flex space-x-2">
-            <a href="?format=csv" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <a href="?format=csv" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                 Export CSV
             </a>
-            <a href="?format=pdf" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+            <a href="?format=pdf" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
                 Export PDF
             </a>
-            <a href="{% url 'stock-item-list' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <a href="{% url 'stock-item-list' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
                 Back to Inventory
             </a>
         </div>
     </div>
 
     <!-- Filters -->
-    <form method="get" class="bg-white p-4 rounded-lg shadow mb-6">
+    <form method="get" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Warehouse</label>
-                <select name="warehouse" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Warehouse</label>
+                <select name="warehouse" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm">
                     <option value="">All Warehouses</option>
                     {% for w in warehouses %}
                     <option value="{{ w.id }}" {% if request.GET.warehouse == w.id|stringformat:"i" %}selected{% endif %}>
@@ -36,7 +36,7 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
                     Apply Filter
                 </button>
             </div>
@@ -45,64 +45,64 @@
 
     <!-- Summary -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <p class="text-sm text-yellow-700">Total Low Stock Items</p>
-            <p class="text-2xl font-bold text-yellow-900">{{ total_low_stock }}</p>
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+            <p class="text-sm text-yellow-700 dark:text-yellow-300">Total Low Stock Items</p>
+            <p class="text-2xl font-bold text-yellow-900 dark:text-yellow-200">{{ total_low_stock }}</p>
         </div>
-        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
-            <p class="text-sm text-red-700">Total Deficit</p>
-            <p class="text-2xl font-bold text-red-900">{{ total_deficit|floatformat:2 }}</p>
+        <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+            <p class="text-sm text-red-700 dark:text-red-300">Total Deficit</p>
+            <p class="text-2xl font-bold text-red-900 dark:text-red-200">{{ total_deficit|floatformat:2 }}</p>
         </div>
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Warehouse</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Qty</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reorder Level</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-red-600 uppercase">Deficit</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Batch</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Warehouse</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Current Qty</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Reorder Level</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-red-600 dark:text-red-400 uppercase">Deficit</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {% for item in low_stock_items %}
-                <tr class="hover:bg-red-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr class="hover:bg-red-50 dark:hover:bg-red-900/20">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                         {{ item.product.sku }}
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         {{ item.product.name }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {{ item.batch_number|default:"-" }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {{ item.warehouse.code }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 dark:text-red-400">
                         {{ item.quantity }} {{ item.product.unit_of_measure.symbol }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {{ item.reorder_threshold }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-700">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-700 dark:text-red-300">
                         {{ item.stock_deficit|floatformat:2 }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {{ item.product.unit_of_measure.symbol }}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                         <div class="py-8">
-                            <span class="text-4xl">All Clear</span>
+                            <span class="text-4xl text-green-600 dark:text-green-400">All Clear</span>
                             <p class="mt-2">No low stock items found</p>
                         </div>
                     </td>

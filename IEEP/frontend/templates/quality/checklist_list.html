@@ -1,0 +1,77 @@
+<!-- templates/quality/checklist_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Quality Control Checklists - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-active { background-color: #d1fae5; color: #047857; }
+        .status-inactive { background-color: #e5e7eb; color: #4b5563; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-active { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-inactive { background-color: #374151; color: #d1d5db; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Quality Control Checklists</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by checklist name or product SKU">
+                </div>
+                <div>
+                    <label for="is_active" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="is_active" id="is_active"
+                            class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Statuses</option>
+                        <option value="true" {% if request.GET.is_active == 'true' %}selected{% endif %}>Active</option>
+                        <option value="false" {% if request.GET.is_active == 'false' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Checklists Table -->
+            {% if checklists %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Name</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Product</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Created By</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for checklist in checklists %}
+                                <tr class="border-b dark:border-gray-600 table-row status-{% if checklist.is_active %}active{% else %}inactive{% endif %}">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ checklist.name }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ checklist.product.sku|default:'N/A' }} {% if checklist.product %} - {{ checklist.product.name }}{% endif %}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ checklist.is_active|yesno:"Active,Inactive" }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ checklist.created_by.username|default:'N/A' }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ checklist.created_at|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No quality control checklists found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

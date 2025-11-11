@@ -1,0 +1,274 @@
+<!-- templates/procurement/supplier_form.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-field {
+        margin-bottom: 1.5rem;
+    }
+    .form-field label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    .form-field input, 
+    .form-field select, 
+    .form-field textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+    .form-field input:focus, 
+    .form-field select:focus, 
+    .form-field textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .form-field .errorlist {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        list-style: none;
+        padding: 0;
+    }
+    .checkbox-field {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .checkbox-field input[type="checkbox"] {
+        width: auto;
+    }
+    .section-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    /* Dark mode overrides */
+    .dark .form-field label {
+        color: #e5e7eb;
+    }
+    .dark .form-field input, 
+    .dark .form-field select, 
+    .dark .form-field textarea {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    .dark .form-field input:focus, 
+    .dark .form-field select:focus, 
+    .dark .form-field textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .dark .section-card {
+        background: #1f2937;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    .dark .form-actions {
+        border-top-color: #4b5563;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ title }}</h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-2">Add a new supplier to your procurement system</p>
+    </div>
+
+    <div class="section-card">
+        <form method="post" id="supplier-form" novalidate>
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Basic Information -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-600">Basic Information</h3>
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.code.id_for_label }}">Supplier Code *</label>
+                    {{ form.code }}
+                    {{ form.code.errors }}
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.name.id_for_label }}">Supplier Name *</label>
+                    {{ form.name }}
+                    {{ form.name.errors }}
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.supplier_type.id_for_label }}">Supplier Type *</label>
+                    {{ form.supplier_type }}
+                    {{ form.supplier_type.errors }}
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.contact_person.id_for_label }}">Contact Person</label>
+                    {{ form.contact_person }}
+                    {{ form.contact_person.errors }}
+                </div>
+
+                <!-- Contact Information -->
+                <div class="md:col-span-2 mt-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-600">Contact Information</h3>
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.email.id_for_label }}">Email Address</label>
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+                    {{ form.phone }}
+                    {{ form.phone.errors }}
+                </div>
+                
+                <div class="form-field md:col-span-2">
+                    <label for="{{ form.address.id_for_label }}">Address</label>
+                    {{ form.address }}
+                    {{ form.address.errors }}
+                </div>
+
+                <!-- Business Information -->
+                <div class="md:col-span-2 mt-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-600">Business Information</h3>
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.tax_id.id_for_label }}">Tax ID</label>
+                    {{ form.tax_id }}
+                    {{ form.tax_id.errors }}
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.payment_terms.id_for_label }}">Payment Terms</label>
+                    {{ form.payment_terms }}
+                    {{ form.payment_terms.errors }}
+                </div>
+                
+                <div class="form-field">
+                    <label for="{{ form.lead_time_days.id_for_label }}">Lead Time (Days) *</label>
+                    {{ form.lead_time_days }}
+                    {{ form.lead_time_days.errors }}
+                </div>
+                
+                <div class="form-field checkbox-field">
+                    {{ form.is_active }}
+                    <label for="{{ form.is_active.id_for_label }}" class="!mb-0">Active Supplier</label>
+                    {{ form.is_active.errors }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'supplier-list' %}" 
+                   class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                    Create Supplier
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('supplier-form');
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Toastify({
+                        text: data.message || 'Supplier created successfully!',
+                        duration: 3000,
+                        gravity: 'top',
+                        position: 'right',
+                        backgroundColor: '#10B981',
+                    }).showToast();
+                    
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '{% url "supplier-list" %}';
+                    }, 1000);
+                } else {
+                    // Handle form errors
+                    if (data.errors) {
+                        let errorMessage = 'Please correct the errors below:';
+                        for (const field in data.errors) {
+                            errorMessage += `\n• ${field}: ${data.errors[field].join(', ')}`;
+                        }
+                        
+                        Toastify({
+                            text: errorMessage,
+                            duration: 5000,
+                            gravity: 'top',
+                            position: 'right',
+                            backgroundColor: '#EF4444',
+                        }).showToast();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Toastify({
+                    text: 'An error occurred while creating the supplier.',
+                    duration: 5000,
+                    gravity: 'top',
+                    position: 'right',
+                    backgroundColor: '#EF4444',
+                }).showToast();
+            });
+        });
+        
+        // Auto-uppercase supplier code
+        const codeInput = document.getElementById('{{ form.code.id_for_label }}');
+        if (codeInput) {
+            codeInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        }
+    });
+</script>
+{% endblock %}

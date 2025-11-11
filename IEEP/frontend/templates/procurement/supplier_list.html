@@ -1,0 +1,105 @@
+<!-- templates/procurement/supplier_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Suppliers - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-active { background-color: #d1fae5; color: #047857; }
+        .status-inactive { background-color: #e5e7eb; color: #4b5563; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-active { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-inactive { background-color: #374151; color: #d1d5db; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Add Create Button -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Suppliers</h1>
+            <a href="{% url 'supplier-create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
+                + Add New Supplier
+            </a>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by code, name, or contact person">
+                </div>
+                <div>
+                    <label for="supplier_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier Type</label>
+                    <select name="supplier_type" id="supplier_type"
+                            class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Types</option>
+                        {% for value, label in suppliers.model.SUPPLIER_TYPES %}
+                            <option value="{{ value }}" {% if request.GET.supplier_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Suppliers Table -->
+            {% if suppliers %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Code</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Name</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Type</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Contact Person</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Email</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Phone</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for supplier in suppliers %}
+                                <tr class="border-b dark:border-gray-600 table-row status-{% if supplier.is_active %}active{% else %}inactive{% endif %}">
+                                    <td class="p-3 font-medium text-gray-900 dark:text-white">{{ supplier.code }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-white">{{ supplier.name }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-white">{{ supplier.get_supplier_type_display }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-white">{{ supplier.contact_person|default:'N/A' }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-white">{{ supplier.email|default:'N/A' }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-white">{{ supplier.phone|default:'N/A' }}</td>
+                                    <td class="p-3">
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium status-{% if supplier.is_active %}active{% else %}inactive{% endif %}">
+                                            {{ supplier.is_active|yesno:"Active,Inactive" }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No suppliers</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new supplier.</p>
+                    <div class="mt-6">
+                        <a href="{% url 'supplier-create' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                            + Add New Supplier
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

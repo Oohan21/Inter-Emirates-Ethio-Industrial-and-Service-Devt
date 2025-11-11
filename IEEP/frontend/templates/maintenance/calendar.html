@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Maintenance Calendar - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet">
+    <style>
+        .fc .priority-low { background-color: #d1fae5; color: #047857; }
+        .fc .priority-medium { background-color: #fef3c7; color: #b45309; }
+        .fc .priority-high { background-color: #fee2e2; color: #b91c1c; }
+        .fc .priority-critical { background-color: #dc2626; color: #ffffff; }
+        #calendar { max-width: 1000px; margin: 0 auto; }
+        
+        /* Dark mode styles for FullCalendar */
+        .dark .fc {
+            color: #f9fafb;
+        }
+        
+        .dark .fc-theme-standard .fc-scrollgrid {
+            border-color: #4b5563;
+        }
+        
+        .dark .fc-theme-standard td, 
+        .dark .fc-theme-standard th {
+            border-color: #4b5563;
+        }
+        
+        .dark .fc-theme-standard .fc-list {
+            border-color: #4b5563;
+        }
+        
+        .dark .fc .fc-toolbar {
+            color: #f9fafb;
+        }
+        
+        .dark .fc .fc-button {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+        
+        .dark .fc .fc-button:hover {
+            background-color: #4b5563;
+        }
+        
+        .dark .fc .fc-button-primary:not(:disabled).fc-button-active {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .dark .fc .fc-daygrid-day.fc-day-today {
+            background-color: #1e3a8a;
+        }
+        
+        .dark .fc .fc-col-header-cell {
+            background-color: #374151;
+        }
+        
+        .dark .fc .fc-daygrid-day-number {
+            color: #f9fafb;
+        }
+        
+        .dark .fc .fc-event {
+            border-color: #3b82f6;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Maintenance Calendar</h1>
+        <div id="calendar" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700"></div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('calendar');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth', // Monthly view
+                events: [
+                    {% for event in calendar_events %}
+                        {
+                            title: '{{ event.title|escapejs }}',
+                            start: '{{ event.start|escapejs }}',
+                            url: '{{ event.url|escapejs }}',
+                            classNames: ['{{ event.className|escapejs }}']
+                        }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                eventClick: function (info) {
+                    info.jsEvent.preventDefault(); // Prevent default browser behavior
+                    if (info.event.url) {
+                        window.location.href = info.event.url; // Navigate to the maintenance order detail
+                    }
+                },
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                height: 'auto',
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
+                themeSystem: 'standard'
+            });
+            calendar.render();
+        });
+    </script>
+{% endblock %}
+[file content end]

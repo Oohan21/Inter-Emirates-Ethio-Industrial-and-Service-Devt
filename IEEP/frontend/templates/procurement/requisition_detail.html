@@ -1,0 +1,75 @@
+<!-- templates/procurement/requisition_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Requisition {{ requisition.requisition_number }} - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Requisition: {{ requisition.requisition_number }}</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="space-y-2">
+                <p><strong class="text-gray-900 dark:text-white">Requested By:</strong> {{ requisition.requested_by.username }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Department:</strong> {{ requisition.department }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Status:</strong> 
+                    <span class="px-2 py-1 rounded status-{{ requisition.status }}">
+                        {{ requisition.get_status_display }}
+                    </span>
+                </p>
+            </div>
+            <div class="space-y-2">
+                <p><strong class="text-gray-900 dark:text-white">Total Estimated Cost:</strong> {{ requisition.total_estimated_cost }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Created At:</strong> {{ requisition.created_at|date:"Y-m-d H:i" }}</p>
+                {% if requisition.approved_by %}
+                <p><strong class="text-gray-900 dark:text-white">Approved By:</strong> {{ requisition.approved_by.username }}</p>
+                <p><strong class="text-gray-900 dark:text-white">Approved At:</strong> {{ requisition.approved_at|date:"Y-m-d H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if requisition.purpose %}
+        <div class="mb-6">
+            <strong class="text-gray-900 dark:text-white">Purpose:</strong>
+            <p class="text-gray-900 dark:text-white mt-1">{{ requisition.purpose }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if requisition.items.all %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Requisition Items</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 dark:bg-gray-700">
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Product</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Quantity</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Unit Price</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Required Date</th>
+                        <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in requisition.items.all %}
+                    <tr class="border-b dark:border-gray-600">
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.product.sku }} - {{ item.product.name }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.quantity }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.unit_price }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.required_date|date:"Y-m-d" }}</td>
+                        <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.quantity|floatformat:4|multiply:item.unit_price|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-6">
+        <a href="{% url 'requisition-list' %}" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+            Back to List
+        </a>
+    </div>
+</div>
+{% endblock %}

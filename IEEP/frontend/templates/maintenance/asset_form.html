@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load maintenance_tags %}
+
+{% block title %}{{ title }} - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">{{ title }}</h1>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+            <form method="post" id="asset-form">
+                {% csrf_token %}
+                
+                <!-- Display form fields manually for better control -->
+                {% for field in form %}
+                <div class="mb-4">
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                    <div class="text-sm text-red-600 dark:text-red-400 mt-1">
+                        {{ field.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <div class="flex justify-end space-x-2 mt-6">
+                    <a href="{% if is_create %}{% url 'asset-list' %}{% else %}{% url 'asset-detail' object.pk %}{% endif %}" 
+                       class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                        {% if is_create %}Create Asset{% else %}Save Changes{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Style form fields for dark mode */
+#asset-form input, 
+#asset-form select, 
+#asset-form textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    background-color: white;
+    color: #1f2937;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.dark #asset-form input,
+.dark #asset-form select,
+.dark #asset-form textarea {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+#asset-form input:focus,
+#asset-form select:focus,
+#asset-form textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dark #asset-form input:focus,
+.dark #asset-form select:focus,
+.dark #asset-form textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+#asset-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+</style>
+{% endblock %}

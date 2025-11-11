@@ -1,0 +1,631 @@
+{% extends 'base.html' %}
+{% block title %}{{ work_order.order_number }} - Work Order Details - Inter Emirates ERP{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Work Order Details</h1>
+    <p class="text-gray-600 dark:text-gray-400">Complete information for {{ work_order.order_number }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Work Order Information -->
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">{{ work_order.product.name }}</h2>
+                <p class="text-gray-600 dark:text-gray-400">{{ work_order.order_number }}</p>
+            </div>
+            <div class="flex space-x-2">
+                <span class="px-3 py-1 text-sm rounded-full 
+                            {% if work_order.status == 'completed' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300
+                            {% elif work_order.status == 'in_progress' %}bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-300
+                            {% elif work_order.status == 'qc_pending' %}bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300
+                            {% elif work_order.status == 'planned' %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
+                            {% else %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300{% endif %}">
+                    {{ work_order.get_status_display }}
+                </span>
+                <span class="px-3 py-1 text-sm rounded-full bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-300">
+                    {{ work_order.priority|title }} Priority
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Order Details -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Order Details</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ work_order.product.sku }} - {{ work_order.product.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">BOM Version</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ work_order.bom.bom_code }} v{{ work_order.bom.version }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Planned Quantity</label>
+                        <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                            {{ work_order.planned_quantity }} {{ work_order.product.unit_of_measure.symbol }}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Actual Quantity</label>
+                        <p class="mt-1 text-sm font-semibold 
+                                {% if work_order.actual_quantity %}
+                                    {% if work_order.actual_quantity >= work_order.planned_quantity %}text-green-600 dark:text-green-400
+                                    {% else %}text-yellow-600 dark:text-yellow-400{% endif %}
+                                {% else %}text-gray-600 dark:text-gray-400{% endif %}">
+                            {{ work_order.actual_quantity|default:"Not produced" }} {{ work_order.product.unit_of_measure.symbol }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule & Resources -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Schedule & Resources</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scheduled Start</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ work_order.scheduled_start|date:"M d, Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scheduled End</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ work_order.scheduled_end|date:"M d, Y H:i"|default:"Not set" }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Machine</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ work_order.assigned_machine.asset_code|default:"Not assigned" }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Operator</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ work_order.operator.get_full_name|default:"Not assigned" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Progress -->
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Production Progress</h3>
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded border border-gray-200 dark:border-gray-600">
+                <div class="grid grid-cols-4 gap-4 text-center">
+                    <div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Planned</div>
+                        <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ work_order.planned_quantity }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Produced</div>
+                        <div class="text-lg font-semibold 
+                                {% if work_order.actual_quantity %}
+                                    {% if work_order.actual_quantity >= work_order.planned_quantity %}text-green-600 dark:text-green-400
+                                    {% else %}text-yellow-600 dark:text-yellow-400{% endif %}
+                                {% else %}text-gray-600 dark:text-gray-400{% endif %}">
+                            {{ work_order.actual_quantity|default:0 }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Scrap</div>
+                        <div class="text-lg font-semibold text-red-600 dark:text-red-400">{{ work_order.scrap_quantity|default:0 }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Yield</div>
+                        <div class="text-lg font-semibold 
+                                {% if work_order.actual_yield >= 95 %}text-green-600 dark:text-green-400
+                                {% elif work_order.actual_yield >= 90 %}text-yellow-600 dark:text-yellow-400
+                                {% else %}text-red-600 dark:text-red-400{% endif %}">
+                            {{ work_order.actual_yield|default:0|floatformat:1 }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                {% if work_order.actual_quantity %}
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        <span>Completion</span>
+                        <span>{{ work_order.completion_percentage|floatformat:1 }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full" 
+                             style="width: {{ work_order.completion_percentage }}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600 flex space-x-3">
+            {% if work_order.status == 'planned' %}
+    <button onclick="startProduction({{ work_order.pk }})" 
+            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
+        Start Production
+    </button>
+    {% elif work_order.status == 'in_progress' %}
+    <button onclick="showUpdateProgressModal({{ work_order.pk }})" 
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+        Update Progress
+    </button>
+    <button onclick="completeProduction({{ work_order.pk }})" 
+            class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition-colors">
+        Complete Production
+    </button>
+            {% elif work_order.status == 'qc_pending' %}
+            <button onclick="passQC({{ work_order.pk }})" 
+                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
+                Pass QC
+            </button>
+            <button onclick="failQC({{ work_order.pk }})" 
+                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition-colors">
+                Fail QC
+            </button>
+            {% endif %}
+            <button onclick="printReport()" 
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">
+                Print Report
+            </button>
+            <a href="{% url 'work-order-update' work_order.pk %}" 
+               class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition-colors">
+                Edit Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Sidebar Information -->
+    <div class="space-y-6">
+        <!-- Material Requirements -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Material Requirements</h3>
+            <div class="space-y-3">
+                {% for component in work_order.bom.components.all %}
+                <div class="flex justify-between items-center text-sm">
+                    <div>
+                        <div class="font-medium text-gray-800 dark:text-white">{{ component.component.sku }}</div>
+                        <div class="text-gray-600 dark:text-gray-400">{{ component.quantity }} {{ component.component.unit_of_measure.symbol }}</div>
+                    </div>
+                    <span class="px-2 py-1 text-xs rounded-full 
+                                {% if component.available_quantity >= component.required_quantity %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300
+                                {% else %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300{% endif %}">
+                        {% if component.available_quantity >= component.required_quantity %}Available
+                        {% else %}Shortage{% endif %}
+                    </span>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500 dark:text-gray-400">No components defined in BOM</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Production Logs -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Activities</h3>
+            <div class="space-y-3 max-h-64 overflow-y-auto">
+                {% for log in production_logs %}
+                <div class="text-sm border-b border-gray-200 dark:border-gray-600 pb-2 last:border-b-0 last:pb-0">
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-800 dark:text-white">{{ log.get_action_display }}</span>
+                        <span class="text-gray-500 dark:text-gray-400 text-xs">{{ log.created_at|date:"H:i" }}</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 text-xs">{{ log.notes|default:"No notes" }}</p>
+                    <p class="text-gray-500 dark:text-gray-400 text-xs">By: {{ log.created_by.get_full_name|default:log.created_by.username }}</p>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 text-center">No activities recorded</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+            <div class="space-y-2">
+                <button onclick="showMaterialIssueModal({{ work_order.pk }})" 
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm transition-colors">
+                    Material Issue
+                </button>
+                <button onclick="showDowntimeModal({{ work_order.pk }})" 
+                        class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded text-sm transition-colors">
+                    Downtime Log
+                </button>
+                <button onclick="showQualityCheckModal({{ work_order.pk }})" 
+                        class="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm transition-colors">
+                    Quality Check
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QC Results Section -->
+{% if work_order.qc_records.exists %}
+<div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quality Control Results</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for qc_record in work_order.qc_records.all %}
+        <div class="border rounded-lg p-4 {% if qc_record.passed %}bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700{% else %}bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700{% endif %}">
+            <div class="flex justify-between items-start mb-2">
+                <h4 class="font-semibold text-gray-800 dark:text-white">{{ qc_record.checkpoint.name }}</h4>
+                <span class="px-2 py-1 text-xs rounded-full 
+                            {% if qc_record.passed %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300
+                            {% else %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300{% endif %}">
+                    {% if qc_record.passed %}Passed{% else %}Failed{% endif %}
+                </span>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ qc_record.notes|default:"No notes" }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">By: {{ qc_record.inspector.get_full_name }} on {{ qc_record.created_at|date:"M d, Y" }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Update Progress Modal -->
+<div id="updateProgressModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-semibold mb-4">Update Production Progress</h3>
+        <form id="updateProgressForm" method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Actual Quantity Produced</label>
+                    <input type="number" step="0.01" name="actual_quantity" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                           value="{{ work_order.actual_quantity|default:0 }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scrap Quantity</label>
+                    <input type="number" step="0.01" name="scrap_quantity" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                           value="{{ work_order.scrap_quantity|default:0 }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                    <textarea name="notes" rows="3" 
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('updateProgressModal')" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
+                    Update Progress
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// CSRF token function
+function getCSRFToken() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        return csrfToken.value;
+    }
+    
+    // Alternative method to get CSRF token from cookies
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    
+    console.error('CSRF token not found');
+    return '';
+}
+
+// Check if SweetAlert2 is loaded
+function checkSweetAlertLoaded() {
+    if (typeof Swal === 'undefined') {
+        console.error('SweetAlert2 is not loaded. Loading now...');
+        // Fallback: load SweetAlert2 dynamically
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+        document.head.appendChild(script);
+        
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css';
+        document.head.appendChild(link);
+        
+        return false;
+    }
+    return true;
+}
+
+// Production Actions
+function startProduction(workOrderId) {
+    console.log('Starting production for work order:', workOrderId);
+    
+    // Check if SweetAlert2 is loaded
+    if (!checkSweetAlertLoaded()) {
+        // Fallback to native confirm
+        if (confirm('Are you sure you want to start production for this work order?')) {
+            submitStartProduction(workOrderId);
+        }
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Start Production?',
+        text: 'Are you sure you want to start production for this work order?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Start Production',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#10B981',
+        cancelButtonColor: '#6B7280'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            submitStartProduction(workOrderId);
+        }
+    });
+}
+
+function submitStartProduction(workOrderId) {
+    // Show loading state if SweetAlert2 is available
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Starting Production...',
+            text: 'Please wait',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
+
+    // Get CSRF token
+    const csrftoken = getCSRFToken();
+    
+    fetch(`/api/production/work-orders/${workOrderId}/start/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+        
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Success!',
+                    text: data.message,
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#10B981'
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                alert('Production started successfully!');
+                location.reload();
+            }
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Error!',
+                    text: data.error || 'Failed to start production',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#EF4444'
+                });
+            } else {
+                alert('Error: ' + (data.error || 'Failed to start production'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+            Swal.fire({
+                title: 'Network Error!',
+                text: 'An error occurred while starting production. Please check your connection.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#EF4444'
+            });
+        } else {
+            alert('Network error occurred while starting production.');
+        }
+    });
+}
+
+// Other functions remain similar but with SweetAlert2 checks
+function completeProduction(workOrderId) {
+    if (!checkSweetAlertLoaded()) {
+        if (confirm('Are you sure you want to complete production?')) {
+            submitCompleteProduction(workOrderId);
+        }
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Complete Production?',
+        text: 'Are you sure you want to mark this work order as completed?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Complete',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            submitCompleteProduction(workOrderId);
+        }
+    });
+}
+
+function submitCompleteProduction(workOrderId) {
+    // Similar implementation to submitStartProduction
+    const csrftoken = getCSRFToken();
+    
+    fetch(`/api/production/work-orders/${workOrderId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Success!', data.message, 'success').then(() => {
+                    location.reload();
+                });
+            } else {
+                alert('Production completed successfully!');
+                location.reload();
+            }
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Error!', data.error, 'error');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error!', 'An error occurred while completing production.', 'error');
+        } else {
+            alert('An error occurred while completing production.');
+        }
+    });
+}
+
+// QC Actions
+function passQC(workOrderId) {
+    Swal.fire({
+        title: 'Pass QC?',
+        text: 'Mark this work order as passing quality control?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Pass QC',
+        cancelButtonText: 'Cancel',
+        input: 'textarea',
+        inputLabel: 'QC Notes (Optional)',
+        inputPlaceholder: 'Enter any additional notes...'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Submit QC pass via form or API
+            submitQCAction(workOrderId, true, result.value);
+        }
+    });
+}
+
+function failQC(workOrderId) {
+    Swal.fire({
+        title: 'Fail QC?',
+        text: 'Mark this work order as failing quality control?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Fail QC',
+        cancelButtonText: 'Cancel',
+        input: 'textarea',
+        inputLabel: 'QC Notes (Required)',
+        inputPlaceholder: 'Explain why QC failed...',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Please provide reason for QC failure';
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Submit QC fail via form or API
+            submitQCAction(workOrderId, false, result.value);
+        }
+    });
+}
+
+function submitQCAction(workOrderId, passed, notes) {
+    const formData = new FormData();
+    formData.append('qc_passed', passed);
+    formData.append('qc_notes', notes);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+
+    fetch(`/api/production/work-orders/${workOrderId}/update/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('Success!', 'QC status updated successfully.', 'success').then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('Error!', 'Failed to update QC status.', 'error');
+        }
+    })
+    .catch(error => {
+        Swal.fire('Error!', 'An error occurred while updating QC status.', 'error');
+    });
+}
+
+// Modal Functions
+function showUpdateProgressModal(workOrderId) {
+    document.getElementById('updateProgressModal').classList.remove('hidden');
+    document.getElementById('updateProgressForm').action = `/api/production/work-orders/${workOrderId}/add-log/`;
+}
+
+function showMaterialIssueModal(workOrderId) {
+    // Redirect to material issue page or show modal
+    window.location.href = `/api/production/material-issue/create/?work_order=${workOrderId}`;
+}
+
+function showDowntimeModal(workOrderId) {
+    // Redirect to downtime logging page or show modal
+    window.location.href = `/api/production/downtime/create/?work_order=${workOrderId}`;
+}
+
+function showQualityCheckModal(workOrderId) {
+    // Redirect to quality check page or show modal
+    window.location.href = `/api/production/quality-check/create/?work_order=${workOrderId}`;
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+// Print Report
+function printReport() {
+    window.open(`/api/production/work-orders/{{ work_order.pk }}/report/`, '_blank');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('updateProgressModal');
+    if (event.target === modal) {
+        closeModal('updateProgressModal');
+    }
+});
+</script>
+{% endblock %}

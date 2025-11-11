@@ -1,0 +1,81 @@
+<!-- templates/reports/maintenance_log.html -->
+{% extends 'base.html' %}
+
+{% block title %}Maintenance Log Report - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-pending { background-color: #fef3c7; color: #b45309; }
+        .status-in_progress { background-color: #dbeafe; color: #1e40af; }
+        .status-completed { background-color: #d1fae5; color: #047857; }
+        .status-cancelled { background-color: #fee2e2; color: #b91c1c; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-pending { background-color: #78350f; color: #fcd34d; }
+        .dark .status-in_progress { background-color: #1e3a8a; color: #93c5fd; }
+        .dark .status-completed { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-cancelled { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Maintenance Log Report</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <!-- Export Button -->
+            <div class="mb-6">
+                <a href="?format=csv" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Export as CSV
+                </a>
+            </div>
+
+            <!-- Filter Form -->
+            <form method="get" class="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by order number or asset code">
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Maintenance Orders Table -->
+            {% if maintenance_orders %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Order Number</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Asset</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Maintenance Type</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Priority</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Scheduled Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in maintenance_orders %}
+                                <tr class="border-b dark:border-gray-600 table-row status-{{ order.status }}">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ order.order_number }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ order.asset.asset_code }} - {{ order.asset.name }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ order.get_maintenance_type_display }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ order.get_priority_display }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ order.get_status_display }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ order.scheduled_date|date:"Y-m-d"|default:'N/A' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No maintenance orders found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

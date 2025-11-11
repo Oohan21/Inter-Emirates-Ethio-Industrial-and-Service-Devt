@@ -1,0 +1,104 @@
+<!-- templates/procurement/purchase_order_detail.html -->
+{% extends 'base.html' %}
+{% load math_filters %}
+{% block title %}Purchase Order {{ purchase_order.po_number }} - Inter Emirates ERP{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .status-draft { background-color: #e5e7eb; color: #4b5563; }
+        .status-issued { background-color: #dbeafe; color: #1e40af; }
+        .status-received { background-color: #d1fae5; color: #047857; }
+        .status-cancelled { background-color: #fee2e2; color: #b91c1c; }
+        .section-card { border-left: 4px solid #3b82f6; }
+        .table-row:hover { background-color: #f3f4f6; }
+        
+        /* Dark mode overrides */
+        .dark .status-draft { background-color: #374151; color: #d1d5db; }
+        .dark .status-issued { background-color: #1e3a8a; color: #93c5fd; }
+        .dark .status-received { background-color: #064e3b; color: #6ee7b7; }
+        .dark .status-cancelled { background-color: #7f1d1d; color: #fca5a5; }
+        .dark .section-card { border-left-color: #60a5fa; }
+        .dark .table-row:hover { background-color: #374151; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Purchase Order: {{ purchase_order.po_number }}</h1>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Order Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">PO Number:</strong> {{ purchase_order.po_number }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Supplier:</strong> {{ purchase_order.supplier.name }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Status:</strong> <span class="px-2 py-1 rounded status-{{ purchase_order.status }}">{{ purchase_order.get_status_display }}</span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Order Date:</strong> {{ purchase_order.order_date|date:"Y-m-d" }}</p>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Expected Delivery:</strong> {{ purchase_order.expected_delivery_date|date:"Y-m-d" }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Actual Delivery:</strong> {{ purchase_order.actual_delivery_date|date:"Y-m-d"|default:'N/A' }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Total Amount:</strong> {{ purchase_order.total_amount }}</p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Created By:</strong> {{ purchase_order.created_by.username|default:'N/A' }}</p>
+                </div>
+            </div>
+            {% if purchase_order.terms_and_conditions %}
+                <p class="mt-4 text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Terms and Conditions:</strong> {{ purchase_order.terms_and_conditions }}</p>
+            {% endif %}
+            {% if purchase_order.requisition %}
+                <p class="mt-4 text-gray-700 dark:text-gray-300"><strong class="text-gray-900 dark:text-white">Requisition:</strong> {{ purchase_order.requisition.requisition_number }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Purchase Order Items -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md section-card">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Order Items</h2>
+            {% if purchase_order.items.all %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Product</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Quantity</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Unit Price</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Received Quantity</th>
+                                <th class="p-3 text-gray-700 dark:text-gray-300 font-semibold">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in purchase_order.items.all %}
+                                <tr class="border-b dark:border-gray-600 table-row">
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.product.sku }} - {{ item.product.name }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.quantity }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.unit_price }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.received_quantity }}</td>
+                                    <td class="p-3 text-gray-900 dark:text-gray-100">{{ item.quantity|floatformat:4|multiply:item.unit_price|floatformat:2 }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No items in this purchase order.</p>
+            {% endif %}
+        </div>
+
+        <div class="mt-6">
+            <a href="{% url 'purchase-order-list' %}" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                Back to List
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Custom filter to multiply numbers for total calculation
+        window.addEventListener('load', function() {
+            if (!window.jinja2) window.jinja2 = {};
+            window.jinja2.multiply = function(a, b) {
+                return a * b;
+            };
+        });
+    </script>
+{% endblock %}

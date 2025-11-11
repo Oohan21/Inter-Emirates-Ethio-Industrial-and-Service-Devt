@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}Work Orders{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Production Work Orders</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'production-board' %}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+                Production Board
+            </a>
+            <a href="{% url 'work-order-create' %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
+                Create Work Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {% for status in status_counts %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center border border-gray-200 dark:border-gray-700">
+            <div class="text-2xl font-bold text-gray-800 dark:text-white">{{ status.count }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 capitalize">{{ status.status }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6 border border-gray-200 dark:border-gray-700">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                <select name="status" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="">All Status</option>
+                    <option value="planned" {% if request.GET.status == "planned" %}selected{% endif %}>Planned</option>
+                    <option value="in_progress" {% if request.GET.status == "in_progress" %}selected{% endif %}>In Progress</option>
+                    <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                <select name="priority" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="">All Priorities</option>
+                    <option value="low" {% if request.GET.priority == "low" %}selected{% endif %}>Low</option>
+                    <option value="medium" {% if request.GET.priority == "medium" %}selected{% endif %}>Medium</option>
+                    <option value="high" {% if request.GET.priority == "high" %}selected{% endif %}>High</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                <input type="text" name="search" value="{{ request.GET.search }}" 
+                       placeholder="Order #, product..." 
+                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+                    Filter
+                </button>
+                <a href="{% url 'work-order-list' %}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Work Orders Table -->
+    {% if work_orders %}
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order #</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {% for order in work_orders %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 {% if order.is_overdue %}bg-red-50 dark:bg-red-900{% endif %}">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ order.order_number }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900 dark:text-white">{{ order.product_sku }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ order.product_name }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {{ order.actual_quantity }} / {{ order.planned_quantity }}
+                        {% if order.yield_percentage %}
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ order.yield_percentage|floatformat:1 }}% yield</div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if order.status == 'completed' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300
+                            {% elif order.status == 'in_progress' %}bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-300
+                            {% elif order.status == 'planned' %}bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300
+                            {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                        {% if order.is_overdue %}
+                        <span class="ml-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300">
+                            Overdue
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if order.priority == 'high' %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300
+                            {% elif order.priority == 'medium' %}bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300
+                            {% else %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300{% endif %}">
+                            {{ order.get_priority_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {% if order.scheduled_end %}
+                            {{ order.scheduled_end|date:"M d, Y" }}
+                        {% else %}
+                            <span class="text-gray-400">Not set</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{% url 'work-order-detail' order.id %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3">
+                            View
+                        </a>
+                        <a href="{% url 'work-order-update' order.id %}" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300">
+                            Edit
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-4 flex justify-center">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                Previous
+            </a>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-500 text-sm font-medium text-white">
+                    {{ num }}
+                </span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    {{ num }}
+                </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                Next
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center border border-gray-200 dark:border-gray-700">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">No work orders found</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {% if request.GET %}Try adjusting your filters{% else %}Get started by creating a new work order{% endif %}
+        </p>
+        <div class="mt-6">
+            <a href="{% url 'work-order-create' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Create Work Order
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

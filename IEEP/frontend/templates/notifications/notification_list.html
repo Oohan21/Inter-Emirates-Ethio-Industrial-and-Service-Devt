@@ -1,0 +1,193 @@
+<!-- notifications/templates/notifications/notification_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Notifications</h1>
+            <div class="flex space-x-4">
+                <button id="mark-all-read" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    Mark All as Read
+                </button>
+                <a href="{% url 'notification-preferences' %}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                    Preferences
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+            {% if notifications %}
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for notification in notifications %}
+                    <div class="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 {% if not notification.is_read %}bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500{% endif %}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">{{ notification.title }}</h3>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                        {% if notification.priority == 'urgent' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                        {% elif notification.priority == 'high' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200
+                                        {% elif notification.priority == 'medium' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                        {% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% endif %}">
+                                        {{ notification.get_priority_display }}
+                                    </span>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-300 mb-2">{{ notification.message }}</p>
+                                <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                                    <span>{{ notification.created_at|timesince }} ago</span>
+                                    <span>{{ notification.get_notification_type_display }}</span>
+                                    {% if not notification.is_read %}
+                                    <span class="text-blue-600 dark:text-blue-400 font-medium">Unread</span>
+                                    {% endif %}
+                                </div>
+                                {% if notification.action_url %}
+                                <div class="mt-3">
+                                    <a href="{{ notification.action_url }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                        View Details →
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex space-x-2">
+                                {% if not notification.is_read %}
+                                <button class="mark-read-btn text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300" data-notification-id="{{ notification.id }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </button>
+                                {% endif %}
+                                <button class="delete-btn text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" data-notification-id="{{ notification.id }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                            Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </div>
+                        <div class="flex space-x-2">
+                            {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300">
+                                Previous
+                            </a>
+                            {% endif %}
+                            
+                            {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300">
+                                Next
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No notifications</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You're all caught up!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark single notification as read
+    document.querySelectorAll('.mark-read-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const notificationId = this.dataset.notificationId;
+            markAsRead(notificationId, this.closest('.hover\\:bg-gray-50'));
+        });
+    });
+    
+    // Mark all as read
+    document.getElementById('mark-all-read').addEventListener('click', function() {
+        if (confirm('Mark all notifications as read?')) {
+            fetch('{% url "mark-all-read" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        }
+    });
+    
+    // Delete notification
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const notificationId = this.dataset.notificationId;
+            if (confirm('Delete this notification?')) {
+                fetch(`/notifications/${notificationId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.closest('.hover\\:bg-gray-50').remove();
+                    }
+                });
+            }
+        });
+    });
+    
+    function markAsRead(notificationId, element) {
+        fetch(`/notifications/${notificationId}/mark-read/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                element.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-500', 'dark:bg-blue-900/20');
+                element.querySelector('.mark-read-btn').remove();
+                updateUnreadCount();
+            }
+        });
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% load maintenance_tags %}
+
+{% block title %}{{ asset.name }} - Asset Details{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 dark:text-white">{{ asset.name }}</h1>
+                <p class="text-gray-600 dark:text-gray-400">{{ asset.asset_code }} - {{ asset.get_asset_type_display }}</p>  <!-- Fixed: get_asset_type_display -->
+            </div>
+            <div class="flex space-x-4">
+                <a href="{% url 'asset-list' %}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors">  <!-- Fixed: added namespace -->
+                    Back to Assets
+                </a>
+                <a href="{% url 'asset-update' asset.pk %}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">  <!-- Fixed: added namespace -->
+                    Edit Asset
+                </a>
+                <!-- Add Create Maintenance Order Button -->
+                <a href="{% url 'maintenance-order-create' %}?asset={{ asset.id }}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors">
+                    Create Maintenance Order
+                </a>
+            </div>
+        </div>
+
+        <!-- Asset Information Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Basic Information -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Basic Information</h3>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Asset Type:</span>  <!-- Added asset type -->
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.get_asset_type_display }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Manufacturer:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.manufacturer|default:"Not specified" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Model:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.model|default:"Not specified" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Serial Number:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.serial_number|default:"Not specified" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Location:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.location|default:"Not specified" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Information -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Status Information</h3>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Current Status:</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                            {% if asset.status == 'operational' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300
+                            {% elif asset.status == 'maintenance' %}bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300
+                            {% elif asset.status == 'broken' %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300
+                            {% elif asset.status == 'idle' %}bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-300
+                            {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300{% endif %}">  <!-- Fixed status options -->
+                            {{ asset.get_status_display }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Maintenance Status:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.maintenance_status }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Operating Hours:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.total_operating_hours }} hours</p>  <!-- Removed custom filter -->
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Due for </span>
+                        <p class="font-medium {% if asset.requires_maintenance %}text-red-600 dark:text-red-400{% else %}text-green-600 dark:text-green-400{% endif %}">  <!-- Fixed: uses requires_maintenance property -->
+                            {{ asset.requires_maintenance|yesno:"Yes,No" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Information -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Maintenance Information</h3>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Installation Date:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.installation_date|date:"M d, Y"|default:"Not specified" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Last </span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.last_maintenance|date:"M d, Y"|default:"Never" }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Next </span>
+                        <p class="font-medium {% if asset.next_maintenance and asset.next_maintenance <= today %}text-red-600 dark:text-red-400{% else %}text-gray-900 dark:text-white{% endif %}">
+                            {{ asset.next_maintenance|date:"M d, Y"|default:"Not scheduled" }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Maintenance Interval:</span>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ asset.maintenance_interval_days }} days</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        {% if asset.description %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Description</h3>
+            <p class="text-gray-700 dark:text-gray-300">{{ asset.description|linebreaks }}</p>  <!-- Added linebreaks filter -->
+        </div>
+        {% endif %}
+
+        <!-- Tabs for Maintenance Data -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex -mb-px">
+                    <button id="orders-tab" class="tab-button py-4 px-6 text-sm font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 active">
+                        Maintenance Orders
+                    </button>
+                    <button id="logs-tab" class="tab-button py-4 px-6 text-sm font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600">
+                        Maintenance Logs
+                    </button>
+                    <button id="upcoming-tab" class="tab-button py-4 px-6 text-sm font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600">
+                        Upcoming Maintenance
+                    </button>
+                </nav>
+            </div>
+
+            <div class="p-6">
+                <!-- Maintenance Orders Tab -->
+                <div id="orders-content" class="tab-content active">
+                    {% if maintenance_orders %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scheduled Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Assigned To</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for order in maintenance_orders %}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        <a href="{% url 'maintenance-order-detail' order.pk %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">  <!-- Fixed: added namespace -->
+                                            {{ order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ order.get_maintenance_type_display }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                            {% if order.status == 'completed' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300
+                                            {% elif order.status == 'in_progress' %}bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-300
+                                            {% elif order.status == 'approved' %}bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300
+                                            {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300{% endif %}">  <!-- Fixed status options -->
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ order.scheduled_date|date:"M d, Y"|default:"Not scheduled" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ order.assigned_to.get_full_name|default:order.assigned_to.username|default:"Unassigned" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ order.created_at|date:"M d, Y" }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-gray-500 dark:text-gray-400">No maintenance orders found for this asset.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Maintenance Logs Tab -->
+                <div id="logs-content" class="tab-content hidden">
+                    {% if maintenance_logs %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Technician</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for log in maintenance_logs %}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ log.created_at|date:"M d, Y H:i" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        <a href="{% url 'maintenance-order-detail' log.maintenance_order.pk %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">  <!-- Fixed: added namespace -->
+                                            {{ log.maintenance_order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ log.get_action_display }}  <!-- Fixed: get_action_display -->
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ log.technician.get_full_name|default:log.technician.username|default:"System" }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                        {{ log.notes|truncatewords:10|default:"-" }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-gray-500 dark:text-gray-400">No maintenance logs found for this asset.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Upcoming Maintenance Tab -->
+                <div id="upcoming-content" class="tab-content hidden">
+                    {% if upcoming_maintenance %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scheduled Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Assigned To</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for order in upcoming_maintenance %}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        <a href="{% url 'maintenance-order-detail' order.pk %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">  <!-- Fixed: added namespace -->
+                                            {{ order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ order.get_maintenance_type_display }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                            {% if order.status == 'completed' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300
+                                            {% elif order.status == 'in_progress' %}bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-300
+                                            {% else %}bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ order.scheduled_date|date:"M d, Y"|default:"Not scheduled" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                            {% if order.priority == 'high' or order.priority == 'critical' %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300
+                                            {% elif order.priority == 'medium' %}bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300
+                                            {% else %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300{% endif %}">
+                                            {{ order.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                        {{ order.assigned_to.get_full_name|default:order.assigned_to.username|default:"Unassigned" }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-gray-500 dark:text-gray-400">No upcoming maintenance scheduled for this asset.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Tab Functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const target = this.id.replace('-tab', '-content');
+            
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('border-transparent');
+                btn.classList.remove('border-blue-500', 'text-blue-600', 'dark:border-blue-400', 'dark:text-blue-400');
+            });
+            
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                content.classList.add('hidden');
+            });
+            
+            // Add active class to current button and content
+            this.classList.add('active');
+            this.classList.remove('border-transparent');
+            this.classList.add('border-blue-500', 'text-blue-600', 'dark:border-blue-400', 'dark:text-blue-400');
+            
+            document.getElementById(target).classList.remove('hidden');
+            document.getElementById(target).classList.add('active');
+        });
+    });
+});
+</script>
+
+<style>
+.tab-button.active {
+    border-bottom-color: #3b82f6;
+    color: #2563eb;
+}
+
+.dark .tab-button.active {
+    border-bottom-color: #60a5fa;
+    color: #60a5fa;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+</style>
+{% endblock %}

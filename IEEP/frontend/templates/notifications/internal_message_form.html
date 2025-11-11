@@ -1,0 +1,112 @@
+<!-- notifications/templates/notifications/internal_message_form.html -->
+{% extends 'base.html' %}
+
+{% block title %}Send Internal Message - Inter Emirates ERP{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Send Internal Message</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">
+                Send a message to other users in the system
+            </p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Subject *
+                        </label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.subject.errors }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.message.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Message *
+                        </label>
+                        {{ form.message }}
+                        {% if form.message.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.message.errors }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.message_type.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Message Type *
+                        </label>
+                        {{ form.message_type }}
+                        {% if form.message_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.message_type.errors }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.recipients.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Recipients *
+                        </label>
+                        {{ form.recipients }}
+                        {% if form.recipients.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.recipients.errors }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center">
+                            {{ form.is_urgent }}
+                            <label for="{{ form.is_urgent.id_for_label }}" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                Urgent Message
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            {{ form.requires_confirmation }}
+                            <label for="{{ form.requires_confirmation.id_for_label }}" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                Require Confirmation
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end space-x-4">
+                    <a href="{% url 'message-inbox' %}" 
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md">
+                        Send Message
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    input, select, textarea {
+        @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white;
+    }
+    textarea {
+        min-height: 200px;
+        resize: vertical;
+    }
+    select[multiple] {
+        height: 120px;
+    }
+    input[type="checkbox"] {
+        @apply rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700;
+    }
+</style>
+{% endblock %}

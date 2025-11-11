@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Edit{% else %}Create{% endif %} Work Order{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">
+            {% if object %}Edit{% else %}Create{% endif %} Work Order
+        </h1>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Product Information -->
+                    <div>
+                        <label for="{{ form.product.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Product *
+                        </label>
+                        {{ form.product }}
+                        {% if form.product.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.product.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.bom.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Bill of Materials *
+                        </label>
+                        {{ form.bom }}
+                        {% if form.bom.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.bom.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Quantity -->
+                    <div>
+                        <label for="{{ form.planned_quantity.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Planned Quantity *
+                        </label>
+                        {{ form.planned_quantity }}
+                        {% if form.planned_quantity.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.planned_quantity.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.actual_quantity %}
+                    <div>
+                        <label for="{{ form.actual_quantity.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Actual Quantity
+                        </label>
+                        {{ form.actual_quantity }}
+                        {% if form.actual_quantity.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.actual_quantity.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Priority and Status -->
+                    <div>
+                        <label for="{{ form.priority.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Priority *
+                        </label>
+                        {{ form.priority }}
+                        {% if form.priority.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.priority.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.status %}
+                    <div>
+                        <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Status *
+                        </label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.status.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Scheduling -->
+                    <div>
+                        <label for="{{ form.scheduled_start.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Scheduled Start *
+                        </label>
+                        {{ form.scheduled_start }}
+                        {% if form.scheduled_start.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.scheduled_start.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.scheduled_end.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Scheduled End
+                        </label>
+                        {{ form.scheduled_end }}
+                        {% if form.scheduled_end.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.scheduled_end.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if form.actual_start and form.actual_end %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Actual Timing -->
+                    <div>
+                        <label for="{{ form.actual_start.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Actual Start
+                        </label>
+                        {{ form.actual_start }}
+                        {% if form.actual_start.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.actual_start.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.actual_end.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Actual End
+                        </label>
+                        {{ form.actual_end }}
+                        {% if form.actual_end.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.actual_end.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Resources -->
+                    <div>
+                        <label for="{{ form.assigned_machine.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Assigned Machine
+                        </label>
+                        {{ form.assigned_machine }}
+                        {% if form.assigned_machine.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.assigned_machine.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.operator.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Operator
+                        </label>
+                        {{ form.operator }}
+                        {% if form.operator.errors %}
+                        <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.operator.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if form.qc_passed and form.qc_notes %}
+                <div class="mb-6">
+                    <!-- QC Information -->
+                    <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-4">Quality Control</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.qc_passed.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                QC Passed
+                            </label>
+                            {{ form.qc_passed }}
+                            {% if form.qc_passed.errors %}
+                            <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.qc_passed.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.qc_notes.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                QC Notes
+                            </label>
+                            {{ form.qc_notes }}
+                            {% if form.qc_notes.errors %}
+                            <div class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.qc_notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="flex justify-end space-x-4">
+                    <a href="{% if object %}{% url 'work-order-detail' object.pk %}{% else %}{% url 'work-order-list' %}{% endif %}" 
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition-colors">
+                        {% if object %}Update{% else %}Create{% endif %} Work Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Style form fields to match the design */
+select, input, textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    background-color: white;
+    color: #1f2937;
+}
+
+.dark select, .dark input, .dark textarea {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+select:focus, input:focus, textarea:focus {
+    outline: none;
+    ring: 2px solid #3b82f6;
+    border-color: #3b82f6;
+}
+
+.dark select:focus, .dark input:focus, .dark textarea:focus {
+    border-color: #3b82f6;
+    ring-color: #3b82f6;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+</style>
+{% endblock %}
