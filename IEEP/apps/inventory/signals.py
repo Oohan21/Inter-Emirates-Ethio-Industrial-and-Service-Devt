@@ -4,10 +4,16 @@ from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal
 import uuid
+import logging
 from apps.notifications.tasks import create_low_stock_notification
 from .models import StockItem, StockTransaction
+from .services.procurement_integration import ProcurementIntegrationService
+from apps.procurement.models import GoodsReceipt, PurchaseOrder
 from apps.finance.models import JournalEntry, JournalEntryLine
 from apps.finance.accounting import get_account
+
+
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=StockItem)
 def low_stock_handler(sender, instance: StockItem, created, **kwargs):
@@ -103,3 +109,14 @@ def create_stock_journal_entry(sender, instance: StockTransaction, created, **kw
             credit=amount,
             description=f"{instance.transaction_type.upper()} {product.sku}"
         )
+
+@receiver(post_save, sender=GoodsReceipt)
+def update_stock_on_goods_receipt(sender, instance, created, **kwargs):
+    """Update stock when goods receipt is created"""
+    if created:
+        ProcurementIntegrationService.process_goods_receipt(instance)
+
+@receiver(post_save, sender=PurchaseOrder)
+def update_procurement_status_on_po_change(sender, instance, **kwargs):
+    """Update stock item procurement status when PO status changes"""
+    ProcurementIntegrationService.update_procurement_status(instance)

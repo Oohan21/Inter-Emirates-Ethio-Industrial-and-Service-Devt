@@ -7,7 +7,8 @@ from django.utils.decorators import method_decorator
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q, Sum, Avg, Count, F
+from django.db.models import Q, Sum, Avg, Count, F, ExpressionWrapper, DecimalField
+from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
 from django.utils import timezone
 from reportlab.lib.pagesizes import letter, A4
@@ -20,12 +21,10 @@ from decimal import Decimal
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from .models import Product, Category, BOM, BOMComponent, ProductImage
-from .forms import ProductForm, BOMForm, BOMComponentForm, ProductImageForm
-from apps.production.models import ProductionOrder, ProductionOrderItem
-from apps.production.forms import ProductionOrderForm, ProductionOrderItemFormSet
+from .forms import ProductForm, BOMForm, BOMComponentForm, ProductImageForm, BOMComponentFormSet
+from apps.production.models import ProductionOrder
 from apps.inventory.models import StockTransaction
 from apps.inventory.forms import StockAdjustmentForm, StockItem
-
 
 @method_decorator(login_required, name="dispatch")
 class ProductListView(ListView):
@@ -37,6 +36,11 @@ class ProductListView(ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        # Annotate total_stock for efficiency
+        queryset = queryset.annotate(
+            _total_stock=Coalesce(Sum('stock_items__quantity'), Decimal('0'))
+        )
 
         product_type = self.request.GET.get("product_type")
         if product_type:
@@ -52,8 +56,49 @@ class ProductListView(ListView):
         elif status == "inactive":
             queryset = queryset.filter(is_active=False)
 
+        # Add search functionality
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(sku__icontains=search) |
+                Q(name__icontains=search) |
+                Q(description__icontains=search)
+            )
+
         return queryset
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = self.get_queryset()  # Already annotated
+
+        # Calculate stats using aggregates (no loop)
+        in_stock_count = queryset.filter(_total_stock__gt=F('reorder_threshold')).count()
+        low_stock_count = queryset.filter(
+            _total_stock__gt=0,
+            _total_stock__lte=F('reorder_threshold')
+        ).count()
+        out_of_stock_count = queryset.filter(_total_stock__lte=0).count()
+
+        total_inventory_value = queryset.aggregate(
+            total_value=Coalesce(
+                Sum(
+                    ExpressionWrapper(
+                        F('cost_price') * F('_total_stock'),
+                        output_field=DecimalField(max_digits=12, decimal_places=2)
+                    )
+                ),
+                Decimal('0')
+            )
+        )['total_value']
+
+        context.update({
+            'total_count': queryset.count(),
+            'in_stock_count': in_stock_count,
+            'low_stock_count': low_stock_count,
+            'out_of_stock_count': out_of_stock_count,
+            'total_inventory_value': total_inventory_value,
+        })
+        return context
 
 @method_decorator(login_required, name="dispatch")
 class ProductDetailView(DetailView):
@@ -350,67 +395,32 @@ class ProductTransactionListView(LoginRequiredMixin, ListView):
         context["product"] = get_object_or_404(Product, pk=self.kwargs["pk"])
         return context
 
-class CreateWorkOrderFromProductView(LoginRequiredMixin, CreateView):
-    model = ProductionOrder
-    form_class = ProductionOrderForm
+class CreateWorkOrderFromProductView(LoginRequiredMixin, View):
     template_name = "production/production_order_form.html"
 
     def get(self, request, pk):
-        bom = get_object_or_404(BOM, pk=pk)
-        return redirect(reverse('create-work-order-from-product', kwargs={'pk': bom.product.pk}))
-
-    def get_initial(self):
-        product = get_object_or_404(Product, pk=self.kwargs["pk"])
-        return {
-            "product": product,
-            "planned_quantity": 1,
+        product = get_object_or_404(Product, pk=pk)
+        context = {
+            'product': product,
+            'bom': BOM.objects.filter(product=product, is_active=True).first(),
         }
+        return render(request, self.template_name, context)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        product = get_object_or_404(Product, pk=self.kwargs["pk"])
-        context["product"] = product
-        context["bom"] = BOM.objects.filter(product=product, is_active=True).first()
-
-        if self.request.POST:
-            context["items"] = ProductionOrderItemFormSet(
-            self.request.POST, instance=self.object
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        
+        # Create production order directly
+        production_order = ProductionOrder.objects.create(
+            product=product,
+            bom=BOM.objects.filter(product=product, is_active=True).first(),
+            planned_quantity=request.POST.get('planned_quantity', 1),
+            scheduled_start=timezone.now(),
+            scheduled_end=timezone.now() + timezone.timedelta(days=1),
+            created_by=request.user,
         )
-        else:
-            formset = ProductionOrderItemFormSet(instance=self.object)
-
-            if context["bom"] and not self.object.pk:
-                initial = []
-                for comp in context["bom"].components.all():
-                    initial.append(
-                    {
-                        "product": comp.component,
-                        "planned_quantity": comp.effective_quantity,
-                        "unit_of_measure": comp.component.unit_of_measure.symbol,
-                    }
-                )
-                formset = ProductionOrderItemFormSet(instance=self.object, initial=initial)
-            context["items"] = formset
-        return context
-
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        items = context["items"]
-
-        with transaction.atomic():
-            self.object = form.save()
-            if items.is_valid():
-              items.instance = self.object
-              items.save()
-            else:
-                return self.form_invalid(form)
-
-        messages.success(self.request, f"Work order {self.object.order_number} created.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("production-order-detail", kwargs={"pk": self.object.pk})
+        
+        messages.success(request, f"Production order {production_order.order_number} created.")
+        return redirect('production-order-detail', pk=production_order.pk)
 
 class ProductDeactivateView(LoginRequiredMixin, View):
     def post(self, request, pk):
@@ -665,10 +675,6 @@ class BOMCostAnalysisView(DetailView):
             }
         })
 
-
-# ------------------------------------------------------------------
-# 3. Compare Versions (List of BOMs for same product)
-# ------------------------------------------------------------------
 class BOMCompareView(ListView):
     model = BOM
     template_name = 'products/bom_compare.html'
@@ -707,3 +713,23 @@ class BOMDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, self.success_message)
         return super().delete(request, *args, **kwargs)
+
+
+def get_bom_options(request):
+    """AJAX view to get BOM options for a product"""
+    product_id = request.GET.get('product_id')
+    
+    if not product_id:
+        return JsonResponse({'boms': []})
+    
+    try:
+        boms = BOM.objects.filter(product_id=product_id, is_active=True)
+        bom_list = [{
+            'id': bom.id,
+            'bom_code': bom.bom_code,
+            'version': bom.version
+        } for bom in boms]
+        
+        return JsonResponse({'boms': bom_list})
+    except Exception as e:
+        return JsonResponse({'boms': [], 'error': str(e)})
