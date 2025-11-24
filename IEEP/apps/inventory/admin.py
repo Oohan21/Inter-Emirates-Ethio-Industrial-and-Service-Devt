@@ -1,3 +1,4 @@
+# inventory/admin.py
 from django.contrib import admin
 from .models import Warehouse, StockItem, StockTransaction, ReorderAlert, Order, OrderItem
 from django.contrib.auth import get_user_model
@@ -35,10 +36,58 @@ class StockItemAdmin(admin.ModelAdmin):
 
 @admin.register(StockTransaction)
 class StockTransactionAdmin(admin.ModelAdmin):
-    list_display = ['stock_item', 'transaction_type', 'quantity', 'created_at']
-    list_filter = ['transaction_type', 'created_at']
-    search_fields = ['stock_item__product__sku', 'reference']
-    readonly_fields = ['created_at', 'updated_at']
+    list_display = [
+        'created_at', 'get_product_sku', 'get_transaction_type', 
+        'get_quantity_change', 'get_warehouse', 'reference', 'created_by'
+    ]
+    list_filter = ['transaction_type', 'created_at', 'stock_item__warehouse']
+    search_fields = [
+        'stock_item__product__sku', 'stock_item__product__name', 
+        'reference', 'notes'
+    ]
+    readonly_fields = ['created_at', 'updated_at', 'previous_quantity', 'new_quantity']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('stock_item', 'transaction_type', 'quantity', 'destination_warehouse')
+        }),
+        ('Tracking', {
+            'fields': ('previous_quantity', 'new_quantity', 'reference', 'notes')
+        }),
+        ('Audit', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_product_sku(self, obj):
+        return obj.stock_item.product.sku
+    get_product_sku.short_description = 'Product SKU'
+    get_product_sku.admin_order_field = 'stock_item__product__sku'
+    
+    def get_transaction_type(self, obj):
+        return obj.get_transaction_type_display()
+    get_transaction_type.short_description = 'Type'
+    
+    def get_quantity_change(self, obj):
+        color = 'green' if obj.is_positive else 'red'
+        return format_html(
+            '<span style="color: {};">{}</span>',
+            color,
+            obj.absolute_quantity_change
+        )
+    get_quantity_change.short_description = 'Quantity Change'
+    
+    def get_warehouse(self, obj):
+        if obj.destination_warehouse:
+            return format_html(
+                '{} → {}',
+                obj.stock_item.warehouse.code,
+                obj.destination_warehouse.code
+            )
+        return obj.stock_item.warehouse.code
+    get_warehouse.short_description = 'Warehouse'
 
 @admin.register(ReorderAlert)
 class ReorderAlertAdmin(admin.ModelAdmin):

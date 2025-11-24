@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from decimal import Decimal
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -79,6 +80,40 @@ class Product(models.Model):
         if self.cost_price > 0 and self.selling_price > 0:
             return ((self.selling_price - self.cost_price) / self.cost_price) * 100
         return 0
+
+    @property
+    def total_stock(self):
+        """
+        Total quantity across all warehouses.
+        Uses string-based relation to avoid circular import.
+        """
+        if hasattr(self, '_total_stock'):
+            return self._total_stock  # Use annotated value from view
+
+        # Safe: uses reverse relation string 'stock_items'
+        total = self.stock_items.aggregate(
+            total=Coalesce(Sum('quantity'), Decimal('0'))
+        )['total']
+        return total
+    
+    @property
+    def is_low_stock(self):
+        return 0 < self.total_stock <= self.reorder_threshold
+
+    @property
+    def is_out_of_stock(self):
+        return self.total_stock <= 0
+    
+    @property
+    def warehouse_availability(self):
+        """Get stock availability by warehouse"""
+        try:
+            from apps.inventory.models import StockItem
+            return self.stock_items.select_related('warehouse').values(
+                'warehouse__code', 'warehouse__name', 'quantity'
+            )
+        except:
+            return []
 
 class BOM(models.Model):
     BOM_STATUS = (
